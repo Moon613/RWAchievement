@@ -1,35 +1,60 @@
-
 using Menu;
 using UnityEngine;
 
 namespace AchievementMenu;
 public class AchievementMenu : Menu.Menu
 {
-    public SimpleButton backButton;
-    private readonly float leftAnchor;
+    public int currentSelectedPage = 0;
+    float screenWidth => manager.rainWorld.options.ScreenSize.x;
+    float screenHeight => manager.rainWorld.options.ScreenSize.y;
+    Vector2 screenCenter => manager.rainWorld.options.ScreenSize/2f;
+    float movementPerStep;
+    const int STEPS = 20;
+    int stepsTaken;
+    public BigArrowButton prevButton;
+    public BigArrowButton nextButton;
     public AchievementMenu(ProcessManager processManager) : base(processManager, Plugin.AchievementMenu) {
         mySoundLoopID = SoundID.MENU_Main_Menu_LOOP;
-        leftAnchor = (1366f - manager.rainWorld.options.ScreenSize.x) / 2f;
         currentPage = 0;
+        stepsTaken = STEPS;
+        movementPerStep = screenWidth/STEPS;
+        Debug.Log($"Achievement menu: {screenWidth}");
 
-        pages.Add(new Page(this, null, "main", 0));
-        pages[0].subObjects.Add(new InteractiveMenuScene(this, pages[0], MenuScene.SceneID.MainMenu_Downpour));
-        pages[0].subObjects[0].myContainer.AddChild(new FSprite("Futile_White"){scale=20});
-
-        pages.Add(new Page(this, null, "main2", 1));
-        pages[1].pos.x = 1000;
+        #region Page 1
+        pages.Add(new Page(this, null, "main", 0){pos=new Vector2(1366, 768) - manager.rainWorld.options.ScreenSize});
+        pages[0].subObjects.Add(new InteractiveMenuScene(this, pages[0], MenuScene.SceneID.Empty));
+        
+        const int BigArrowButtonWidth = 25;
+        Vector2 adjustForPageOffsetDueToResolution = 0.5f*pages[0].pos;
 
         // The next page button
-        pages[0].subObjects.Add(new BigArrowButton(this, pages[0], "NEXT", new Vector2(leftAnchor + 800f, 75f), 1));
-        
+        nextButton = new BigArrowButton(this, pages[0], "NEXT", new Vector2((screenWidth/2f) + 200f - BigArrowButtonWidth, 50f) - adjustForPageOffsetDueToResolution, 1);
+        pages[0].subObjects.Add(nextButton);
+
         // The prev page button
-        pages[0].subObjects.Add(new BigArrowButton(this, pages[0], "PREV", new Vector2(leftAnchor + 500f, 75f), -1));
-        
-        backButton = new SimpleButton(this, pages[0], Translate("BACK"), "BACK", new Vector2(leftAnchor + 15f, 50f), new Vector2(220f, 30f));
+        prevButton = new BigArrowButton(this, pages[0], "PREV", new Vector2((screenWidth/2f) - 200f - BigArrowButtonWidth, 50f) - adjustForPageOffsetDueToResolution, -1);
+        pages[0].subObjects.Add(prevButton);
+
+        // The back button lol
+        const int BackButtonWidth = 160;
+        SimpleButton backButton = new SimpleButton(this, pages[0], Translate("BACK"), "BACK", new Vector2(screenCenter.x-(BackButtonWidth/2), 50f) - adjustForPageOffsetDueToResolution, new Vector2(BackButtonWidth, 50f));
         pages[0].subObjects.Add(backButton);
         backObject = backButton;
-        backButton.nextSelectable[0] = backButton;
-        backButton.nextSelectable[2] = backButton;
+        backButton.nextSelectable[0] = pages[0].subObjects[0];
+        backButton.nextSelectable[2] = pages[0].subObjects[1];
+        #endregion
+
+        pages.Add(new Page(this, null, "achipages", 1){pos=new Vector2(1366, 768) - manager.rainWorld.options.ScreenSize});
+        adjustForPageOffsetDueToResolution = 0.5f*pages[1].pos;
+        // Removes the mouseCursor from the subObjects.
+        pages[1].subObjects.Clear();
+        
+        
+        pages[1].subObjects.Add(new AchievementPage(this, pages[1], "ach1", 0, new Vector2(screenWidth/2f, screenHeight/2f) - adjustForPageOffsetDueToResolution, "", "aidesktopimg", "ACHIEVEMENT NAME", "2/27/2024", "ACHIEVEMENT\nDESCRIPTION"));
+        
+        pages[1].subObjects.Add(new AchievementPage(this, pages[1], "ach2", 1, new Vector2((screenWidth/2f) + screenWidth, screenHeight/2f) - adjustForPageOffsetDueToResolution, "", "full_figure_red", "ACHIEVEMENT NAME 2", "2/27/2024", "ACHIEVEMENT DESCRIPTION\n2"));
+
+        
     }
     public override void Update()
     {
@@ -37,6 +62,30 @@ public class AchievementMenu : Menu.Menu
         if (Input.GetKey(KeyCode.Escape))
         {
             Singal(backObject, "BACK");
+        }
+        if (stepsTaken < STEPS) {
+            foreach (AchievementPage page in pages[1].subObjects) {
+                if (page.pos.x >= (pages[1].subObjects.Count*screenWidth+screenWidth/2f)) {
+                    page.pos.x = -screenWidth-screenWidth/2f;
+                    page.lastPos = page.pos;
+                }
+                page.pos.x += movementPerStep;
+            }
+            stepsTaken++;
+        }
+        if (stepsTaken > STEPS) {
+            foreach (AchievementPage page in pages[1].subObjects) {
+                if (page.pos.x <= (-screenWidth-screenWidth/2f)) {
+                    page.pos.x = (screenWidth/2f) + (pages[1].subObjects.Count*screenWidth);
+                    page.lastPos = page.pos;
+                }
+                page.pos.x -= movementPerStep;
+            }
+            stepsTaken--;
+        }
+        if (stepsTaken == STEPS) {
+            nextButton.inactive = false;
+            prevButton.inactive = false;
         }
     }
     public override void Singal(MenuObject sender, string message)
@@ -46,20 +95,24 @@ public class AchievementMenu : Menu.Menu
             manager.RequestMainProcessSwitch(ProcessManager.ProcessID.MainMenu);
             PlaySound(SoundID.MENU_Switch_Page_Out);
         }
-        if (message == "NEXT") {
+        if (message == "NEXT" && stepsTaken == STEPS) {
             PlaySound(SoundID.MENU_Next_Slugcat, 0, 1.4f, 0.4f);
-            currentPage++;
-            pages[currentPage-1].pos.x -= 1000;
-            if (currentPage >= pages.Count) {
-                currentPage = 0;
+            currentSelectedPage++;
+            stepsTaken = 2*STEPS;
+            nextButton.inactive = true;
+            prevButton.inactive = true;
+            if (currentSelectedPage >= pages[1].subObjects.Count) {
+                currentSelectedPage = 0;
             }
-            pages[currentPage].pos.x = 0;
         }
-        if (message == "PREV") {
+        if (message == "PREV" && stepsTaken == STEPS) {
             PlaySound(SoundID.MENU_Next_Slugcat, 0, 1.4f, 0.4f);
-            currentPage--;
-            if (currentPage < 0) {
-                currentPage = pages.Count-1;
+            currentSelectedPage--;
+            stepsTaken = 0;
+            nextButton.inactive = true;
+            prevButton.inactive = true;
+            if (currentSelectedPage < 0) {
+                currentSelectedPage = pages[1].subObjects.Count-1;
             }
         }
     }

@@ -24,10 +24,16 @@ namespace AchievementMenu
     public class MenuHooks {
         public static void Apply() {
             On.Menu.MainMenu.ctor += MainMenu_ctor;
+            On.Menu.PositionedMenuObject.Update += PositionedMenuObject_Update;
             IL.Menu.MainMenu.AddMainMenuButton += IL_MainMenu_AddMainMenuButton;
             IL.ProcessManager.PostSwitchMainProcess += IL_ProcessManager_PostSwitchMainProcess;
         }
-
+        private static void PositionedMenuObject_Update(On.Menu.PositionedMenuObject.orig_Update orig, PositionedMenuObject self)
+        {
+            Vector2 tempLastPos = self.pos;
+            orig(self);
+            self.lastPos = tempLastPos;
+        }
         private static void IL_ProcessManager_PostSwitchMainProcess(ILContext il) {
             var cursor = new ILCursor(il);
 
