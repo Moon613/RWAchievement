@@ -28,9 +28,4 @@ public class AchievementPage : Page
         description.label.scale = 1f;
         subObjects.Add(description);
     }
-    public override void Update()
-    {
-        base.Update();
-        Debug.Log($"Achievement page {name} at position {pos}");
-    }
 }

@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using Menu;
 using UnityEngine;
+using static AchievementMenu.Plugin;
 
 namespace AchievementMenu;
 public class AchievementMenu : Menu.Menu
@@ -18,7 +20,6 @@ public class AchievementMenu : Menu.Menu
         currentPage = 0;
         stepsTaken = STEPS;
         movementPerStep = screenWidth/STEPS;
-        Debug.Log($"Achievement menu: {screenWidth}");
 
         #region Page 1
         pages.Add(new Page(this, null, "main", 0){pos=new Vector2(1366, 768) - manager.rainWorld.options.ScreenSize});
@@ -49,12 +50,17 @@ public class AchievementMenu : Menu.Menu
         // Removes the mouseCursor from the subObjects.
         pages[1].subObjects.Clear();
         
-        
-        pages[1].subObjects.Add(new AchievementPage(this, pages[1], "ach1", 0, new Vector2(screenWidth/2f, screenHeight/2f) - adjustForPageOffsetDueToResolution, "", "aidesktopimg", "ACHIEVEMENT NAME", "2/27/2024", "ACHIEVEMENT\nDESCRIPTION"));
-        
-        pages[1].subObjects.Add(new AchievementPage(this, pages[1], "ach2", 1, new Vector2((screenWidth/2f) + screenWidth, screenHeight/2f) - adjustForPageOffsetDueToResolution, "", "full_figure_red", "ACHIEVEMENT NAME 2", "2/27/2024", "ACHIEVEMENT DESCRIPTION\n2"));
+        if (achievements.TryGetValue(manager.rainWorld, out List<Achievement> achievementList)) {
+            for (int i = 0; i < achievementList.Count; i++) {
+                Achievement achievement = achievementList[i];
+                // Debug.Log($"Achievement Mod: {achievement.achievementName}, {achievement.imageFolder}, {achievement.imageName}, {achievement.description}");
+                pages[1].subObjects.Add(new AchievementPage(this, pages[1], achievement.achievementName, i, new Vector2(screenWidth/2f + i * screenWidth, screenHeight/2f) - adjustForPageOffsetDueToResolution, achievement.imageFolder, achievement.imageName, achievement.achievementName, achievement.dateAchieved, achievement.description));
+            }
+        }
 
+        // pages[1].subObjects.Add(new AchievementPage(this, pages[1], "ach1", 2, new Vector2(screenWidth/2f + 2*screenWidth, screenHeight/2f) - adjustForPageOffsetDueToResolution, "", "aidesktopimg", "ACHIEVEMENT NAME", "2/27/2024", "ACHIEVEMENT\nDESCRIPTION"));
         
+        // pages[1].subObjects.Add(new AchievementPage(this, pages[1], "ach2", 3, new Vector2((screenWidth/2f) + 3*screenWidth, screenHeight/2f) - adjustForPageOffsetDueToResolution, "", "full_figure_red", "ACHIEVEMENT NAME 2", "2/27/2024", "ACHIEVEMENT DESCRIPTION\n2"));
     }
     public override void Update()
     {
@@ -65,7 +71,7 @@ public class AchievementMenu : Menu.Menu
         }
         if (stepsTaken < STEPS) {
             foreach (AchievementPage page in pages[1].subObjects) {
-                if (page.pos.x >= (pages[1].subObjects.Count*screenWidth+screenWidth/2f)) {
+                if (page.pos.x >= ((pages[1].subObjects.Count-2)*screenWidth+screenWidth/2f)) {
                     page.pos.x = -screenWidth-screenWidth/2f;
                     page.lastPos = page.pos;
                 }
@@ -76,7 +82,7 @@ public class AchievementMenu : Menu.Menu
         if (stepsTaken > STEPS) {
             foreach (AchievementPage page in pages[1].subObjects) {
                 if (page.pos.x <= (-screenWidth-screenWidth/2f)) {
-                    page.pos.x = (screenWidth/2f) + (pages[1].subObjects.Count*screenWidth);
+                    page.pos.x = (screenWidth/2f) + ((pages[1].subObjects.Count-2)*screenWidth);
                     page.lastPos = page.pos;
                 }
                 page.pos.x -= movementPerStep;
