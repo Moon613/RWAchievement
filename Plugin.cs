@@ -153,6 +153,29 @@ public class Plugin : BaseUnityPlugin
 			}
 			original.SetPixels(newPixels);
 		}
+        public override string ToString()
+        {
+            string ret = "Achievement, ";
+            ret += $"{nameof(achievementName)}: {achievementName}, ";
+            ret += $"{nameof(dateAchieved)}: {dateAchieved}, ";
+            ret += $"{nameof(imageFolder)}: {imageFolder}, ";
+            ret += $"{nameof(imageName)}: {imageName}, ";
+            ret += $"{nameof(description)}: \"{description}\", ";
+            ret += $"{nameof(originMod)}: {originMod ?? "NULL"}";
+            return ret;
+            // string ret = "Achievement, ";
+            // foreach (FieldInfo field in typeof(Achievement).GetFields()) {
+            //     string s = $"{field.Name}: {field.GetValue(this)}, ";
+            //     if (field.Name == nameof(description)) {
+            //         s = "\"" + s.Replace('\n', ' ').Replace('\t', ' ') + "\"";
+            //     }
+            //     if (field.Name == nameof(originMod) && originMod == null) {
+            //         s = s.Substring(0, s.Length-2) + "NULL";
+            //     }
+            //     ret += s;
+            // }
+            // return ret;
+        }
         public string achievementName = "";
         public string dateAchieved = "";
         public string imageFolder = "";
