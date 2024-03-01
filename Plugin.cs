@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
+using System.Reflection;
 
 #pragma warning disable CS0618
 
@@ -24,9 +25,9 @@ public class Plugin : BaseUnityPlugin
 {
     public static ProcessManager.ProcessID AchievementMenu => new ProcessManager.ProcessID("AchievementMenu", true);
     public static ConditionalWeakTable<RainWorld, List<Achievement>> achievements = new();
-    public static ManualLogSource logger;
-    static bool postInitTriggered = false;
-    private static bool IsInit;
+    public static ManualLogSource? logger;
+    static bool postInit = false;
+    const string ACHIEVEMENT_FOLDER = "achievements";
     public void OnEnable()
     {
         logger = base.Logger;
@@ -37,7 +38,7 @@ public class Plugin : BaseUnityPlugin
     private static void RainWorld_PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
     {
         orig(self);
-        if (!postInitTriggered && achievements.TryGetValue(self, out List<Achievement> achievementList)) {
+        if (!postInit && achievements.TryGetValue(self, out List<Achievement> achievementList)) {
 
             #region LoadSteamAchievements
             Debug.Log($"Achievement Mod, there are {SteamUserStats.GetNumAchievements()} Steam achievements");
@@ -69,7 +70,7 @@ public class Plugin : BaseUnityPlugin
 
 
             #region LoadCustomAchievements
-            string[] files = AssetManager.ListDirectory("achievements", false, true).Where(file => file.EndsWith(".json")).ToArray();
+            string[] files = AssetManager.ListDirectory(ACHIEVEMENT_FOLDER, false, true).Where(file => file.EndsWith(".json")).ToArray();
             for (int i = 0; i < files.Count(); i++) {
                 if (File.Exists(files[i])) {
                     files[i] = files[i].Replace('/', Path.DirectorySeparatorChar);
@@ -77,6 +78,13 @@ public class Plugin : BaseUnityPlugin
                         JObject jobject = JObject.Parse(File.ReadAllText(files[i]));
                         Achievement? achi = jobject.ToObject<Achievement>();
                         if (achi is not null) {
+                            foreach (FieldInfo field in typeof(Achievement).GetFields()) {
+                                if (field.Name != nameof(Achievement.originMod) && field.GetValue(achi) == null) {
+                                    Debug.LogWarning($"Value for {field.Name} is null in achievement {files[i].Substring(files[i].IndexOf(ACHIEVEMENT_FOLDER) + ACHIEVEMENT_FOLDER.Length + 1)}");
+                                    field.SetValue(achi, "");
+                                }
+                            }
+                            Debug.Log($"Achievement Mod, add achievement: {achi}");
                             achievementList.Add(achi);
                         }
                     }
@@ -86,7 +94,7 @@ public class Plugin : BaseUnityPlugin
                 }
             }
             #endregion
-            postInitTriggered = true;
+            postInit = true;
         }
     }
     private static void RainWorld_ctor(On.RainWorld.orig_ctor orig, RainWorld self)

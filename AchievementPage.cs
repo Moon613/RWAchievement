@@ -25,7 +25,7 @@ public class AchievementPage : Page
         subObjects.Add(date);
         
         // Add text that identifies which mod it came from, if specified
-        if (originMod != "") {
+        if (originMod != null) {
             MenuLabel origin = new MenuLabel(menu, this, "From: " + originMod, new Vector2(0, 0.61f*screenCenter.y), Vector2.zero, true);
             origin.label.scale = 0.575f;
             subObjects.Add(origin);
