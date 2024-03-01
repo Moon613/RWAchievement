@@ -10,6 +10,7 @@ using BepInEx.Logging;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
+using UnityEngine;
 
 #pragma warning disable CS0618
 
@@ -29,7 +30,6 @@ public class Plugin : BaseUnityPlugin
     public void OnEnable()
     {
         logger = base.Logger;
-        On.RainWorld.OnModsInit += RainWorldOnOnModsInit;
         On.RainWorld.PostModsInit += RainWorld_PostModsInit;
         On.RainWorld.ctor += RainWorld_ctor;
         MenuHooks.Apply();
@@ -43,19 +43,26 @@ public class Plugin : BaseUnityPlugin
             Debug.Log($"Achievement Mod, there are {SteamUserStats.GetNumAchievements()} Steam achievements");
             for (uint i = 0; i < SteamUserStats.GetNumAchievements(); i++) {
                 string achiInternalName = SteamUserStats.GetAchievementName(i);
-                SteamUserStats.GetAchievementAndUnlockTime(achiInternalName, out bool unlocked, out uint time);
+
+                // Get and conver time
+                SteamUserStats.GetAchievementAndUnlockTime(achiInternalName, out bool unlocked, out uint t);
+                string time = Achievement.ConvertTime(t);
+
+                // Get name and description
                 string achiName = SteamUserStats.GetAchievementDisplayAttribute(achiInternalName, "name");
                 string achiDesc = SteamUserStats.GetAchievementDisplayAttribute(achiInternalName, "desc");
                 
                 // Getting the sprite for it
                 int iconID = SteamUserStats.GetAchievementIcon(achiInternalName);
+                if (!Futile.atlasManager.DoesContainElementWithName(achiInternalName) && Achievement.GetSteamIcon(iconID, out Texture2D? texture)) {
+                    Futile.atlasManager.LoadAtlasFromTexture(achiInternalName, texture, false);
+                }
 
-                Debug.Log($"Achievement Mod: {achiInternalName}, {achiName}, {time}, {achiDesc}, {unlocked}");
                 if (unlocked) {
-                    achievementList.Add(new Achievement(achiName, time.ToString(), "", "basegame_thumbnail", achiDesc));
+                    achievementList.Add(new Achievement(achiName, time, "", achiInternalName, achiDesc, "Steam"));
                 }
                 else {
-                    achievementList.Add(new Achievement("???", "locked", "", "multiplayerportrait02", "???"));
+                    achievementList.Add(new Achievement("???", "?", "", "multiplayerportrait02", "???", "Steam"));
                 }
             }
             #endregion
@@ -88,36 +95,69 @@ public class Plugin : BaseUnityPlugin
         achievements.Add(self, new List<Achievement>());
         achievements.TryGetValue(self, out List<Achievement> achievementList);
     }
-    private void RainWorldOnOnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
-    {
-        orig(self);
-        try
-        {
-            if (IsInit) return;
-
-            
-            IsInit = true;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex);
-            throw;
-        }
-    }
     public class Achievement
     {
-        public Achievement(string achievementName, string dateAchieved, string imageFolder, string imageName, string description)
+        public Achievement(string achievementName, string dateAchieved, string imageFolder, string imageName, string description, string originMod)
         {
             this.achievementName = achievementName;
             this.dateAchieved = dateAchieved;
             this.imageFolder = imageFolder;
             this.imageName = imageName;
             this.description = description;
+            this.originMod = originMod;
         }
+        public static void TriggerAchievement()
+        {
+
+        }
+        public static string ConvertTime(uint time)
+        {
+            DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            dateTime = dateTime.AddSeconds(time).ToLocalTime();
+            return dateTime.Day.ToString() + "/" + dateTime.Month.ToString() + "/" + dateTime.Year.ToString();
+        }
+		public static bool GetSteamIcon(int iconID, out Texture2D? texture)
+		{
+            texture = null;
+            bool result;
+            if (!SteamUtils.GetImageSize(iconID, out uint iconWidth, out uint iconHeight)) {
+				result = false;
+			}
+			else {
+				byte[] iconBuffer = new byte[iconWidth * iconHeight * 4U];
+				if (!SteamUtils.GetImageRGBA(iconID, iconBuffer, iconBuffer.Length)) {
+					result = false;
+				}
+				else {
+					texture = new Texture2D((int)iconWidth, (int)iconHeight, TextureFormat.RGBA32, false, true);
+					texture.LoadRawTextureData(iconBuffer);
+					FlipTextureVertically(texture);
+					texture.Apply();
+					result = true;
+				}
+			}
+			return result;
+        }
+		public static void FlipTextureVertically(Texture2D original)
+		{
+			Color[] originalPixels = original.GetPixels();
+			Color[] newPixels = new Color[originalPixels.Length];
+			int width = original.width;
+			int rows = original.height;
+			for (int x = 0; x < width; x++)
+			{
+				for (int y = 0; y < rows; y++)
+				{
+					newPixels[x + y * width] = originalPixels[x + (rows - y - 1) * width];
+				}
+			}
+			original.SetPixels(newPixels);
+		}
         public string achievementName = "";
         public string dateAchieved = "";
         public string imageFolder = "";
         public string imageName = "";
         public string description = "";
-}
+        public string originMod = "";
+    }
 }
