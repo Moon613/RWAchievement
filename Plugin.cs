@@ -20,17 +20,22 @@ using System.Reflection;
 
 namespace AchievementMenu;
 
-[BepInPlugin("moon.achievements", "Rain World Achievements", "1.0.0")]
+[BepInPlugin(MOD_ID, "Rain World Achievements", "1.0.0")]
 public class Plugin : BaseUnityPlugin
 {
     public static ProcessManager.ProcessID AchievementMenu => new ProcessManager.ProcessID("AchievementMenu", true);
     public static ConditionalWeakTable<RainWorld, List<Achievement>> achievements = new();
     public static ManualLogSource? logger;
     static bool postInit = false;
+    const string MOD_ID = "moon.achievements";
     const string ACHIEVEMENT_FOLDER = "achievements";
+    const char DICTIONARY_SEPARATOR = '~';
+    const char SAVE_DATA_SEPARATOR = '|';
+    static string unlockDataPath = "";
     public void OnEnable()
     {
         logger = base.Logger;
+        // This hook does the achievement loading
         On.RainWorld.PostModsInit += RainWorld_PostModsInit;
         On.RainWorld.ctor += RainWorld_ctor;
         MenuHooks.Apply();
@@ -39,6 +44,7 @@ public class Plugin : BaseUnityPlugin
     {
         orig(self);
         if (!postInit && achievements.TryGetValue(self, out List<Achievement> achievementList)) {
+            unlockDataPath = ModManager.ActiveMods.First(x => x.id == MOD_ID).path + Path.DirectorySeparatorChar + "UnlockData.txt";
 
             #region LoadSteamAchievements
             Debug.Log($"Achievement Mod, there are {SteamUserStats.GetNumAchievements()} Steam achievements");
@@ -70,6 +76,7 @@ public class Plugin : BaseUnityPlugin
 
 
             #region LoadCustomAchievements
+            Achievement.LoadUnlockData();
             string[] files = AssetManager.ListDirectory(ACHIEVEMENT_FOLDER, false, true).Where(file => file.EndsWith(".json")).ToArray();
             for (int i = 0; i < files.Count(); i++) {
                 if (File.Exists(files[i])) {
@@ -78,7 +85,19 @@ public class Plugin : BaseUnityPlugin
                         JObject jobject = JObject.Parse(File.ReadAllText(files[i]));
                         Achievement? achi = jobject.ToObject<Achievement>();
                         if (achi is not null) {
+                            Debug.Log($"Achievement Mod {achi} was not null");
+                            if (Achievement.dictionary.Keys.FirstOrDefault(x => x == achi.achievementName) == default) {
+                                Achievement.dictionary.Add(achi.achievementName, "false");
+                                achi.unlocked = false;
+                            }
+                            else {
+                                achi.unlocked = (Achievement.dictionary[achi.achievementName] == "true") ? true : false;
+                            }
                             foreach (FieldInfo field in typeof(Achievement).GetFields()) {
+                                if (field.Name == nameof(Achievement.dictionary)) {
+                                    continue;
+                                }
+                                // Ensure no null fields
                                 if (field.Name != nameof(Achievement.originMod) && field.GetValue(achi) == null) {
                                     Debug.LogWarning($"Value for {field.Name} is null in achievement {files[i].Substring(files[i].IndexOf(ACHIEVEMENT_FOLDER) + ACHIEVEMENT_FOLDER.Length + 1)}");
                                     field.SetValue(achi, "");
@@ -93,6 +112,7 @@ public class Plugin : BaseUnityPlugin
                     }
                 }
             }
+            Achievement.SaveUnlockData();
             #endregion
             postInit = true;
         }
@@ -114,9 +134,31 @@ public class Plugin : BaseUnityPlugin
             this.description = description;
             this.originMod = originMod;
         }
-        public static void TriggerAchievement()
+        public static void TriggerAchievement(string achievementName)
         {
-
+            dictionary[achievementName] = "true";
+            SaveUnlockData();
+        }
+        public static void SaveUnlockData()
+        {
+            string save = "";
+            foreach (KeyValuePair<string, string> keyValuePair in dictionary) {
+                save += keyValuePair.Key + DICTIONARY_SEPARATOR + keyValuePair.Value + SAVE_DATA_SEPARATOR;
+            }
+            File.WriteAllText(unlockDataPath, save);
+        }
+        public static void LoadUnlockData()
+        {
+            Debug.Log("Achievement Mod loading unlock data");
+            string[] unlockSaveData = File.ReadAllText(unlockDataPath).Replace(Environment.NewLine, string.Empty).Trim('|').Split(SAVE_DATA_SEPARATOR);
+            if (unlockSaveData.Length == 1 && unlockSaveData[0] == "") {
+                Debug.Log("Achievement Mod, no unlock data to load");
+                return;
+            }
+            foreach (string unlockData in unlockSaveData) {
+                dictionary.Add(unlockData.Split(DICTIONARY_SEPARATOR)[0], unlockData.Split(DICTIONARY_SEPARATOR)[1]);
+            }
+            Debug.Log("Achievement Mod loaded unlock data");
         }
         public static string ConvertTime(uint time)
         {
@@ -168,7 +210,7 @@ public class Plugin : BaseUnityPlugin
             ret += $"{nameof(dateAchieved)}: {dateAchieved}, ";
             ret += $"{nameof(imageFolder)}: {imageFolder}, ";
             ret += $"{nameof(imageName)}: {imageName}, ";
-            ret += $"{nameof(description)}: \"{description}\", ";
+            ret += $"{nameof(description)}: \"{description.Replace(Environment.NewLine, " ")}\", ";
             ret += $"{nameof(originMod)}: {originMod ?? "NULL"}";
             return ret;
             // string ret = "Achievement, ";
@@ -184,11 +226,13 @@ public class Plugin : BaseUnityPlugin
             // }
             // return ret;
         }
+        public static Dictionary<string, string> dictionary = new Dictionary<string, string>();
         public string achievementName = "";
         public string dateAchieved = "";
         public string imageFolder = "";
         public string imageName = "";
         public string description = "";
         public string originMod = "";
+        public bool unlocked = false;
     }
 }
