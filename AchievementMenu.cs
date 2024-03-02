@@ -54,7 +54,7 @@ public class AchievementMenu : Menu.Menu
             for (int i = 0; i < achievementList.Count; i++) {
                 Achievement achievement = achievementList[i];
                 // Debug.Log($"Achievement Mod: {achievement.achievementName}, {achievement.imageFolder}, {achievement.imageName}, {achievement.description}");
-                pages[1].subObjects.Add(new AchievementPage(this, pages[1], achievement.achievementName, i, new Vector2(screenWidth/2f + (i-2) * screenWidth, screenHeight/2f) - adjustForPageOffsetDueToResolution, achievement.imageFolder, achievement.imageName, achievement.achievementName, achievement.dateAchieved, achievement.description, achievement.originMod));
+                pages[1].subObjects.Add(new AchievementPage(this, pages[1], achievement.achievementName, i, new Vector2(screenWidth/2f + (i-2) * screenWidth, screenHeight/2f) - adjustForPageOffsetDueToResolution, achievement));
             }
         }
 
