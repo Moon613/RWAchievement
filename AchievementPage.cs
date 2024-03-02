@@ -16,12 +16,12 @@ public class AchievementPage : Page
         this.pos = pos;
         
         // Add the Achievement name
-        MenuLabel title = new MenuLabel(menu, this, achievement.achievementName, new Vector2(0, 0.85f*screenCenter.y), Vector2.zero, true);
+        MenuLabel title = new MenuLabel(menu, this, achievement.unlocked? achievement.achievementName : "???", new Vector2(0, 0.85f*screenCenter.y), Vector2.zero, true);
         title.label.scale = 2.5f;
         subObjects.Add(title);
         
         // Add the date it was achieved
-        MenuLabel date = new MenuLabel(menu, this, "Date Achieved:\n" + achievement.dateAchieved, new Vector2(0, 0.695f*screenCenter.y), Vector2.zero, true);
+        MenuLabel date = new MenuLabel(menu, this, "Date Achieved:\n" + (achievement.unlocked? achievement.dateAchieved : "?"), new Vector2(0, 0.695f*screenCenter.y), Vector2.zero, true);
         date.label.scale = 0.65f;
         subObjects.Add(date);
         
@@ -33,10 +33,10 @@ public class AchievementPage : Page
         }
         
         // Add the Achievement image
-        subObjects.Add(new MenuIllustration(menu, this, achievement.imageFolder, achievement.imageName, new Vector2(0, 0.16f*screenCenter.y), true, true));
+        subObjects.Add(new MenuIllustration(menu, this, achievement.imageFolder, achievement.unlocked? achievement.imageName : "multiplayerportrait02", new Vector2(0, 0.16f*screenCenter.y), true, true));
         
         // Add the description
-        MenuLabel description = new MenuLabel(menu, this, achievement.description, new Vector2(0, -0.5f*screenCenter.y), Vector2.zero, true);
+        MenuLabel description = new MenuLabel(menu, this, achievement.unlocked? achievement.description : "???", new Vector2(0, -0.5f*screenCenter.y), Vector2.zero, true);
         description.label.scale = 1f;
         subObjects.Add(description);
     }
