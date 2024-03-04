@@ -69,6 +69,12 @@ public class AchievementMenu : Menu.Menu
         {
             Singal(backObject, "BACK");
         }
+        if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) {
+            Singal(pages[0], "PREV");
+        }
+        if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) {
+            Singal(pages[0], "NEXT");
+        }
         if (stepsTaken < STEPS) {
             foreach (AchievementPage page in pages[1].subObjects) {
                 if (page.pos.x >= ((pages[1].subObjects.Count-2)*screenWidth+screenWidth/2f)) {
