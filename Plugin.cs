@@ -102,20 +102,20 @@ public class Plugin : BaseUnityPlugin
                             achi == New achievement that was loaded from a mod's .json file for an achievement
                             *******************/
                             // Detects if this is a new achievement with no unlock save data, and adds it to the save data is so.
-                            if (Achievement.dictionary.Keys.FirstOrDefault(x => x == achi.internalID) == default) {
-                                Achievement.dictionary.Add(achi.internalID, new string[2]{"false", Achievement.ConvertTime(0)});
+                            if (Achievement.saveData.Keys.FirstOrDefault(x => x == achi.internalID) == default) {
+                                Achievement.saveData.Add(achi.internalID, new string[2]{"false", Achievement.ConvertTime(0)});
                                 achi.unlocked = false;
                                 achi.dateAchieved = Achievement.ConvertTime(0);
                             }
                             // If one is found, set the current Achievement data to what is in the unlock save data
                             else {
-                                achi.unlocked = (Achievement.dictionary[achi.internalID][0] == "true") ? true : false;
-                                achi.dateAchieved = Achievement.dictionary[achi.internalID][1];
+                                achi.unlocked = (Achievement.saveData[achi.internalID][0] == "true") ? true : false;
+                                achi.dateAchieved = Achievement.saveData[achi.internalID][1];
                             }
                             // Make sure that the fields of the achievement are not null.
                             foreach (FieldInfo field in typeof(Achievement).GetFields()) {
                                 // Skip the static dictionary field
-                                if (field.Name == nameof(Achievement.dictionary)) {
+                                if (field.Name == nameof(Achievement.saveData)) {
                                     continue;
                                 }
                                 // Ensure no null fields
@@ -160,7 +160,7 @@ public class Plugin : BaseUnityPlugin
         }
         public static void TriggerAchievement(RainWorld rainWorld, string internalID)
         {
-            dictionary[internalID][0] = "true";
+            saveData[internalID][0] = "true";
             SaveUnlockData();
             if (achievements.TryGetValue(rainWorld, out List<Achievement> achievementList) && achievementList.FirstOrDefault(x => x.internalID == internalID) != default) {
                 achievementList.First(x => x.internalID == internalID).unlocked = true;
@@ -169,7 +169,7 @@ public class Plugin : BaseUnityPlugin
         public static void SaveUnlockData()
         {
             string save = "";
-            foreach (KeyValuePair<string, string[]> keyValuePair in dictionary) {
+            foreach (KeyValuePair<string, string[]> keyValuePair in saveData) {
                 save += keyValuePair.Key + DICTIONARY_SEPARATOR + keyValuePair.Value[0] + UNLOCK_AND_DATE_SEPARATOR + keyValuePair.Value[1] + SAVE_DATA_SEPARATOR;
             }
             File.WriteAllText(unlockDataPath, save);
@@ -184,7 +184,7 @@ public class Plugin : BaseUnityPlugin
             }
             foreach (string unlockData in unlockSaveData) {
                 string data = unlockData.Split(DICTIONARY_SEPARATOR)[1];
-                dictionary.Add(unlockData.Split(DICTIONARY_SEPARATOR)[0], new string[2]{data.Split(UNLOCK_AND_DATE_SEPARATOR)[0], data.Split(UNLOCK_AND_DATE_SEPARATOR)[1]});
+                saveData.Add(unlockData.Split(DICTIONARY_SEPARATOR)[0], new string[2]{data.Split(UNLOCK_AND_DATE_SEPARATOR)[0], data.Split(UNLOCK_AND_DATE_SEPARATOR)[1]});
             }
             Debug.Log("Achievement Mod loaded unlock data");
         }
@@ -255,7 +255,7 @@ public class Plugin : BaseUnityPlugin
             // }
             // return ret;
         }
-        public static Dictionary<string, string[]> dictionary = new Dictionary<string, string[]>();
+        public static Dictionary<string, string[]> saveData = new Dictionary<string, string[]>();
         public string achievementName = "";
         public string dateAchieved = "";
         public string imageFolder = "";
