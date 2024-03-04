@@ -41,8 +41,12 @@ public class AchievementMenu : Menu.Menu
         SimpleButton backButton = new SimpleButton(this, pages[0], Translate("BACK"), "BACK", new Vector2(screenCenter.x-(BackButtonWidth/2), 50f) - adjustForPageOffsetDueToResolution, new Vector2(BackButtonWidth, 50f));
         pages[0].subObjects.Add(backButton);
         backObject = backButton;
-        backButton.nextSelectable[0] = pages[0].subObjects[0];
-        backButton.nextSelectable[2] = pages[0].subObjects[1];
+        backButton.nextSelectable[0] = prevButton;
+        backButton.nextSelectable[2] = nextButton;
+
+        // List view button
+        SimpleButton listView = new SimpleButton(this, pages[0], "A", "LIST", new Vector2(-0.8f*screenWidth, 0.8f*screenHeight) - adjustForPageOffsetDueToResolution, new Vector2(50, 50));
+        pages[0].subObjects.Add(listView);
         #endregion
 
         pages.Add(new Page(this, null, "achipages", 1){pos=new Vector2(1366, 768) - manager.rainWorld.options.ScreenSize});
