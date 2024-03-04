@@ -79,7 +79,7 @@ public class Plugin : BaseUnityPlugin
             #region LoadCustomAchievements
             Achievement.LoadUnlockData();
             string[] files = AssetManager.ListDirectory(ACHIEVEMENT_FOLDER, false, true).Where(file => file.EndsWith(".json")).ToArray();
-            for (int i = 0; i < files.Count(); i++) {
+            for (int i = 0; i < files.Length; i++) {
                 if (File.Exists(files[i])) {
                     files[i] = files[i].Replace('/', Path.DirectorySeparatorChar);
                     try {
@@ -89,21 +89,25 @@ public class Plugin : BaseUnityPlugin
                         if (achi is not null) {
                             // Make sure an internalID is specified
                             if (achi.internalID == null) {
-                                throw new Exception("Achievement Mod: Please give your achievement an internal ID");
+                                throw new IOException("Achievement Mod: Please give your achievement an internal ID");
                             }
 
                             // Make sure the internal id does not contain any characters that would cause a parsing error.
                             char[] invalidChars = new[] {DICTIONARY_SEPARATOR, SAVE_DATA_SEPARATOR, UNLOCK_AND_DATE_SEPARATOR};
                             if (invalidChars.Any(c => achi.internalID.Contains(c))) {
-                                throw new Exception($"Achievement Mod: Invalid character in internal ID, invalid chars: {DICTIONARY_SEPARATOR}{SAVE_DATA_SEPARATOR}{UNLOCK_AND_DATE_SEPARATOR}");
+                                throw new IOException($"Achievement Mod: Invalid character in internal ID, invalid chars: {DICTIONARY_SEPARATOR}{SAVE_DATA_SEPARATOR}{UNLOCK_AND_DATE_SEPARATOR}");
                             }
-                            // Detects if this is a new achievement with no unlock save data, and adds it to the dictionary.
+                            /*******************
+                            Achievement.dictionary == save data that was loaded in in Achievement.LoadUnlockData()
+                            achi == New achievement that was loaded from a mod's .json file for an achievement
+                            *******************/
+                            // Detects if this is a new achievement with no unlock save data, and adds it to the save data is so.
                             if (Achievement.dictionary.Keys.FirstOrDefault(x => x == achi.internalID) == default) {
                                 Achievement.dictionary.Add(achi.internalID, new string[2]{"false", Achievement.ConvertTime(0)});
                                 achi.unlocked = false;
                                 achi.dateAchieved = Achievement.ConvertTime(0);
                             }
-                            // If one is found, set the unlock data to what is in the unlock savedata file
+                            // If one is found, set the current Achievement data to what is in the unlock save data
                             else {
                                 achi.unlocked = (Achievement.dictionary[achi.internalID][0] == "true") ? true : false;
                                 achi.dateAchieved = Achievement.dictionary[achi.internalID][1];
@@ -259,6 +263,7 @@ public class Plugin : BaseUnityPlugin
         public string description = "";
         public string originMod = "";
         public bool unlocked = false;
+        // This MUST be unique
         public string internalID = "";
     }
 }
