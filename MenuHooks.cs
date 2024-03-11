@@ -80,6 +80,8 @@ namespace AchievementMenu
             
             self.AddMainMenuButton(new SimpleButton(self, self.pages[0], "Achievements".ToUpper(), "AAAAAAAA", pos, size), () => {
                 manager.RequestMainProcessSwitch(Plugin.AchievementMenu);
+                manager.musicPlayer.FadeOutAllSongs(180);
+                manager.menuMic.AllQuiet();
                 self.PlaySound(SoundID.MENU_Switch_Page_In);
             }, 50);
         }

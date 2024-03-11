@@ -67,10 +67,10 @@ public class Plugin : BaseUnityPlugin
                 }
 
                 if (unlocked) {
-                    achievementList.Add(new Achievement(achiName, time, "", achiInternalName, achiDesc, "Steam", ""){unlocked=true});
+                    achievementList.Add(new Achievement(achiName, time, "", achiInternalName, achiDesc, "Steam", achiInternalName){unlocked=true});
                 }
                 else {
-                    achievementList.Add(new Achievement("???", "?", "", "multiplayerportrait02", "???", "Steam", ""){unlocked=false});
+                    achievementList.Add(new Achievement("???", "?", "", "multiplayerportrait02", "???", "Steam", achiInternalName){unlocked=false});
                 }
             }
             #endregion
