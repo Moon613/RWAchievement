@@ -20,7 +20,7 @@ public class AchievementMenu : Menu.Menu
     const int PAGE_STEPS = 30;
     float pageMovementPerStep;
     int pageStepsTaken;
-    const int DROPDOWN_MENU_STEPS = 20;
+    const int DROPDOWN_MENU_STEPS = 4;
     float dropdownMovementPerStep;
     int dropdownStepsTaken;
     bool viewingList = false;
@@ -89,7 +89,7 @@ public class AchievementMenu : Menu.Menu
 
         #region List View (Part of page 1)
         if (achievements.TryGetValue(manager.rainWorld, out List<Achievement> achievementList1)) {
-            int scrollMenuRows = Mathf.CeilToInt(achievementList1.Count/3);
+            int scrollMenuRows = Mathf.CeilToInt(achievementList1.Count/3f);
             const int buttonHeight = 50;
 
             achievementScroll = new OpScrollBox(new Vector2(ScreenWidth-MINIMUM_SCREEN_WIDTH, (50f/768f)*ScreenHeight+ScreenHeight), new Vector2(800, (700f/768f)*ScreenHeight), (buttonHeight+20)*scrollMenuRows, false, false, true);
@@ -101,7 +101,7 @@ public class AchievementMenu : Menu.Menu
             {
                 scaleX = 86,
                 scaleY = 49,
-                color = new Color(0f, 0f, 0f, 0.925f)
+                color = new Color(0f, 0f, 0f, 0.95f)
             };
             shade.SetPosition(new Vector2(342,340));
             achievementScroll.myContainer.AddChild(shade);
@@ -116,7 +116,11 @@ public class AchievementMenu : Menu.Menu
                 if (i%3==0 && i!=0) {
                     rowNum++;
                 }
-                AchievementOPSimpleButton simpleButton = new AchievementOPSimpleButton(new Vector2(240*(i%3), (buttonHeight+20)*scrollMenuRows-70*rowNum), new Vector2(600f/3f, buttonHeight), achievementList1[i].achievementName, achievementList1[i].internalID);
+                string name = achievementList1[i].achievementName;
+                if (name.Length > 29) {
+                    name = name.Substring(0, 29).Trim() + "...";
+                }
+                AchievementOPSimpleButton simpleButton = new AchievementOPSimpleButton(new Vector2(240*(i%3)+5, (buttonHeight+20)*scrollMenuRows-70*rowNum), new Vector2(600f/3f, buttonHeight), name, achievementList1[i].internalID);
 
                 var onClick = typeof(AchievementOPSimpleButton).GetEvent("OnClick");
                 onClick.AddEventHandler(simpleButton, Delegate.CreateDelegate(onClick.EventHandlerType, this, typeof(AchievementMenu).GetMethod("Signal")));
@@ -125,6 +129,7 @@ public class AchievementMenu : Menu.Menu
             }
         }
         #endregion
+        JumpToAchievement(0);
         Debug.Log($"Achievement Mod menu startup, current selected page: {currentSelectedPage}, {achievementList.Count}");
 
         // pages[1].subObjects.Add(new AchievementPage(this, pages[1], "ach1", 2, new Vector2(screenWidth/2f + 2*screenWidth, screenHeight/2f) - adjustForPageOffsetDueToResolution, "", "aidesktopimg", "ACHIEVEMENT NAME", "2/27/2024", "ACHIEVEMENT\nDESCRIPTION"));
@@ -202,8 +207,7 @@ public class AchievementMenu : Menu.Menu
         List<UIelement> achievementScrollAsList = achievementScroll.items.ToList();
         for (int i = 0; i < achievementScrollAsList.Count; i++) {
             if ((achievementScrollAsList[i] as AchievementOPSimpleButton)?.ID == (sennder as AchievementOPSimpleButton)?.ID) {
-                JumpToAchievement((i-currentSelectedPage)*PAGE_STEPS);
-                currentSelectedPage = i;
+                JumpToAchievement(i);
                 if (currentSelectedPage >= pages[1].subObjects.Count) {
                     currentSelectedPage -= achievementScrollAsList.Count;
                 }
@@ -216,19 +220,20 @@ public class AchievementMenu : Menu.Menu
         }
         Singal(sennder.Owner, "LIST");
     }
-    public void JumpToAchievement(float steps)
+    public void JumpToAchievement(int pageNum)
     {
         foreach (AchievementPage page in pages[1].subObjects) {
-            page.pos.x -= steps*pageMovementPerStep;
+            page.pos.x -= (pageNum-currentSelectedPage)*PAGE_STEPS*pageMovementPerStep;
             if (page.pos.x > GreatestXPos) {
-                page.pos.x -= GreatestXPos;
+                page.pos.x -= GreatestXPos + -SmallestXPos;
             }
             if (page.pos.x < SmallestXPos) {
-                page.pos.x += GreatestXPos;
+                page.pos.x += GreatestXPos + -SmallestXPos;
             }
             page.lastPos = page.pos;
             page.prevPos = page.pos;
         }
+        currentSelectedPage = pageNum;
     }
     public override void Singal(MenuObject sender, string message)
     {
