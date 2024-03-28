@@ -14,6 +14,7 @@ public class AchievementPage : Page
     Vector2 screenCenter => menu.manager.rainWorld.options.ScreenSize/2f;
     new Page owner;
     public Vector2 prevPos;
+    private float IconSize => 256f;
     public AchievementPage(Menu.Menu menu, Page owner, string name, int index, Vector2 pos, Achievement achievement) : base(menu, owner, name, index) {
         this.owner = owner;
         // Clear it of the mouse position object, I won't be needing it
@@ -40,6 +41,11 @@ public class AchievementPage : Page
         
         // Add the Achievement image
         image = new MenuIllustration(menu, this, achievement.imageFolder, achievement.unlocked? achievement.imageName : "multiplayerportrait02", new Vector2(0, 0.16f*screenCenter.y), true, true);
+        if (achievement.originMod == "Steam") {
+            var newElementSize = image.sprite.element.sourceSize;
+            image.sprite.scaleX = IconSize / newElementSize.x;
+            image.sprite.scaleY = IconSize / newElementSize.y;
+        }
         subObjects.Add(image);
         
         // Add the description
