@@ -32,7 +32,6 @@ public class AchievementMenu : Menu.Menu
     public OpScrollBox achievementScroll;
     public new SimpleButton backObject;
     public AchievementMenu(ProcessManager processManager) : base(processManager, Plugin.AchievementMenu) {
-        mySoundLoopID = SoundID.MENU_Main_Menu_LOOP;
         currentPage = 0;
 
         pageStepsTaken = PAGE_STEPS;
@@ -156,6 +155,10 @@ public class AchievementMenu : Menu.Menu
         if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) {
             Singal(pages[0], "NEXT");
         }
+        if (Input.GetKey(KeyCode.L)) {
+            Singal(pages[0], "LIST");
+            backCooldown = 60;
+        }
         if (pageStepsTaken < PAGE_STEPS) {
             foreach (AchievementPage page in pages[1].subObjects) {
                 if (Mathf.Round(page.pos.x) >= GreatestXPos) {
@@ -244,7 +247,7 @@ public class AchievementMenu : Menu.Menu
             manager.menuMic.PlayLoop(SoundID.MENU_Main_Menu_LOOP, 0, 1, 1, true);
         }
         if (message == "NEXT" && pageStepsTaken == PAGE_STEPS) {
-            PlaySound(SoundID.MENU_Next_Slugcat, 0, 1.4f, 0.4f);
+            PlaySound(SoundID.MENU_Next_Slugcat, 0.4f, 0.75f, 0.9f);
             currentSelectedPage++;
             pageStepsTaken = 2*PAGE_STEPS;
             nextButton.buttonBehav.greyedOut = true;
@@ -255,7 +258,7 @@ public class AchievementMenu : Menu.Menu
             Debug.Log($"Achievement Mod next page, current selected page: {currentSelectedPage}");
         }
         if (message == "PREV" && pageStepsTaken == PAGE_STEPS) {
-            PlaySound(SoundID.MENU_Next_Slugcat, 0, 1.4f, 0.4f);
+            PlaySound(SoundID.MENU_Next_Slugcat, -0.4f, 0.75f, 0.9f);
             currentSelectedPage--;
             pageStepsTaken = 0;
             nextButton.buttonBehav.greyedOut = true;
