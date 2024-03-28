@@ -58,7 +58,7 @@ namespace AchievementMenu
                 }
 
                 cursor.MoveAfterLabels();
-                cursor.EmitDelegate((int _) => 12); //BENSON WISHES FOR MORE THAN 9...
+                cursor.EmitDelegate((int _) => 12);
             }
             catch (Exception ex)
             {
@@ -83,7 +83,7 @@ namespace AchievementMenu
                 manager.musicPlayer.FadeOutAllSongs(180);
                 manager.menuMic.AllQuiet();
                 self.PlaySound(SoundID.MENU_Switch_Page_In);
-            }, 50);
+            }, ModManager.MSC? 2 : 3);
         }
     }
 }
