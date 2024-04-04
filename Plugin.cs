@@ -18,21 +18,25 @@ using System.Reflection;
 [module: UnverifiableCode]
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 
-namespace AchievementMenu;
+namespace RWAchievements;
 
 [BepInPlugin(MOD_ID, "Rain World Achievements", "1.0.0")]
 public class Plugin : BaseUnityPlugin
 {
-    public static ProcessManager.ProcessID AchievementMenu => new ProcessManager.ProcessID("AchievementMenu", true);
-    public static ConditionalWeakTable<RainWorld, List<Achievement>> achievements = new();
-    public static ManualLogSource? logger;
-    static bool postInit = false;
-    const string MOD_ID = "moon.achievements";
-    const string ACHIEVEMENT_FOLDER = "achievements";
-    const char DICTIONARY_SEPARATOR = '~';
-    const char SAVE_DATA_SEPARATOR = '|';
-    const char UNLOCK_AND_DATE_SEPARATOR = '`';
-    static string unlockDataPath = "";
+    public static ProcessManager.ProcessID AchievementMenuID => new ProcessManager.ProcessID(nameof(AchievementMenuID), true);
+    public static ConditionalWeakTable<RainWorld, List<Achievement>> achievementCWT = new();
+    internal static ManualLogSource? logger;
+    public static FContainer achievementContainer = new FContainer();
+    public static List<Popup> popupList = new List<Popup>();
+    private static bool postInit = false;
+    private const string MOD_ID = "moon.achievements";
+    internal const string ACHIEVEMENT_FOLDER = "achievements";
+    internal const char DICTIONARY_SEPARATOR = '~';
+    internal const char SAVE_DATA_SEPARATOR = '|';
+    internal const char UNLOCK_AND_DATE_SEPARATOR = '`';
+    public const int POPUP_WIDTH = 240;
+    public const int POPUP_HEIGHT = 95;
+    internal static string unlockDataPath = "";
     public void OnEnable()
     {
         logger = base.Logger;
@@ -40,11 +44,43 @@ public class Plugin : BaseUnityPlugin
         On.RainWorld.PostModsInit += RainWorld_PostModsInit;
         On.RainWorld.ctor += RainWorld_ctor;
         MenuHooks.Apply();
+        // These hooks are for updating and drawing the achievements.
+        On.MainLoopProcess.GrafUpdate += MainLoopProcess_GrafUpdate;
+        On.MainLoopProcess.Update += MainLoopProcess_Update;
+        // On.RainWorld.Update += (orig, self) => {
+        //     orig(self);
+        //     cooldown--;
+        //     if (Input.GetKey(KeyCode.Y) && cooldown <= 0) {
+        //         Achievement.TriggerAchievement<DefaultPopup>(self, "moon.1");
+        //         cooldown = 40;
+        //     }
+        //     if (Input.GetKey(KeyCode.U) && cooldown <= 0) {
+        //         Achievement.TriggerAchievement<DefaultPopup>(self, "moon.2");
+        //         cooldown = 40;
+        //     }
+        //     achievementContainer.MoveToFront();
+        // };
+    }
+    private void MainLoopProcess_Update(On.MainLoopProcess.orig_Update orig, MainLoopProcess self)
+    {
+        orig(self);
+        foreach (Popup popup in popupList) {
+            popup.Update();
+        }
+    }
+    private void MainLoopProcess_GrafUpdate(On.MainLoopProcess.orig_GrafUpdate orig, MainLoopProcess self, float timeStacker)
+    {
+        orig(self, timeStacker);
+        foreach (Popup popup in popupList) {
+            popup.GrafUpdate(timeStacker);
+        }
     }
     private static void RainWorld_PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
     {
         orig(self);
-        if (!postInit && achievements.TryGetValue(self, out List<Achievement> achievementList)) {
+        if (!postInit && achievementCWT.TryGetValue(self, out List<Achievement> achievementList)) {
+            Futile.stage.AddChild(achievementContainer);
+            self.Shaders["AchievementPopup"] = FShader.CreateShader("AchievementShader", AssetBundle.LoadFromFile(AssetManager.ResolveFilePath("achievementshaders")).LoadAsset<Shader>("Assets/AchievementShader.shader"));
             unlockDataPath = ModManager.ActiveMods.First(x => x.id == MOD_ID).path + Path.DirectorySeparatorChar + "UnlockData.txt";
 
             #region LoadSteamAchievements
@@ -144,126 +180,135 @@ public class Plugin : BaseUnityPlugin
     private static void RainWorld_ctor(On.RainWorld.orig_ctor orig, RainWorld self)
     {
         orig(self);
-        achievements.Add(self, new List<Achievement>());
+        achievementCWT.Add(self, new List<Achievement>());
     }
-    public class Achievement
+}
+public class Achievement
+{
+    public Achievement(string achievementName, string dateAchieved, string imageFolder, string imageName, string description, string originMod, string internalID)
     {
-        public Achievement(string achievementName, string dateAchieved, string imageFolder, string imageName, string description, string originMod, string internalID)
-        {
-            this.achievementName = achievementName;
-            this.dateAchieved = dateAchieved;
-            this.imageFolder = imageFolder;
-            this.imageName = imageName;
-            this.description = description;
-            this.originMod = originMod;
-            this.internalID = internalID;
-        }
-        public static void TriggerAchievement(RainWorld rainWorld, string internalID)
-        {
-            saveData[internalID][0] = "true";
-            SaveUnlockData();
-            if (achievements.TryGetValue(rainWorld, out List<Achievement> achievementList) && achievementList.FirstOrDefault(x => x.internalID == internalID) != default) {
-                achievementList.First(x => x.internalID == internalID).unlocked = true;
-            }
-        }
-        public static void SaveUnlockData()
-        {
-            string save = "";
-            foreach (KeyValuePair<string, string[]> keyValuePair in saveData) {
-                save += keyValuePair.Key + DICTIONARY_SEPARATOR + keyValuePair.Value[0] + UNLOCK_AND_DATE_SEPARATOR + keyValuePair.Value[1] + SAVE_DATA_SEPARATOR;
-            }
-            File.WriteAllText(unlockDataPath, save);
-        }
-        public static void LoadUnlockData()
-        {
-            Debug.Log("Achievement Mod loading unlock data");
-            string[] unlockSaveData = File.ReadAllText(unlockDataPath).Replace(Environment.NewLine, string.Empty).Trim('|').Split(SAVE_DATA_SEPARATOR);
-            if (unlockSaveData.Length == 1 && unlockSaveData[0] == "") {
-                Debug.Log("Achievement Mod, no unlock data to load");
-                return;
-            }
-            foreach (string unlockData in unlockSaveData) {
-                string data = unlockData.Split(DICTIONARY_SEPARATOR)[1];
-                saveData.Add(unlockData.Split(DICTIONARY_SEPARATOR)[0], new string[2]{data.Split(UNLOCK_AND_DATE_SEPARATOR)[0], data.Split(UNLOCK_AND_DATE_SEPARATOR)[1]});
-            }
-            Debug.Log("Achievement Mod loaded unlock data");
-        }
-        public static string ConvertTime(uint time)
-        {
-            DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            dateTime = dateTime.AddSeconds(time).ToLocalTime();
-            return dateTime.Day.ToString() + "/" + dateTime.Month.ToString() + "/" + dateTime.Year.ToString();
-        }
-		public static bool GetSteamIcon(int iconID, out Texture2D? texture)
-		{
-            texture = null;
-            bool result;
-            if (!SteamUtils.GetImageSize(iconID, out uint iconWidth, out uint iconHeight)) {
-				result = false;
-			}
-			else {
-				byte[] iconBuffer = new byte[iconWidth * iconHeight * 4U];
-				if (!SteamUtils.GetImageRGBA(iconID, iconBuffer, iconBuffer.Length)) {
-					result = false;
-				}
-				else {
-					texture = new Texture2D((int)iconWidth, (int)iconHeight, TextureFormat.RGBA32, false, true);
-					texture.LoadRawTextureData(iconBuffer);
-					FlipTextureVertically(texture);
-					texture.Apply();
-					result = true;
-				}
-			}
-			return result;
-        }
-		public static void FlipTextureVertically(Texture2D original)
-		{
-			Color[] originalPixels = original.GetPixels();
-			Color[] newPixels = new Color[originalPixels.Length];
-			int width = original.width;
-			int rows = original.height;
-			for (int x = 0; x < width; x++)
-			{
-				for (int y = 0; y < rows; y++)
-				{
-					newPixels[x + y * width] = originalPixels[x + (rows - y - 1) * width];
-				}
-			}
-			original.SetPixels(newPixels);
-		}
-        public override string ToString()
-        {
-            string ret = "Achievement, ";
-            ret += $"{nameof(internalID)}: {internalID}, ";
-            ret += $"{nameof(achievementName)}: {achievementName}, ";
-            ret += $"{nameof(dateAchieved)}: {dateAchieved}, ";
-            ret += $"{nameof(imageFolder)}: {imageFolder}, ";
-            ret += $"{nameof(imageName)}: {imageName}, ";
-            ret += $"{nameof(description)}: \"{description.Replace(Environment.NewLine, " ")}\", ";
-            ret += $"{nameof(originMod)}: {originMod ?? "NULL"}";
-            return ret;
-            // string ret = "Achievement, ";
-            // foreach (FieldInfo field in typeof(Achievement).GetFields()) {
-            //     string s = $"{field.Name}: {field.GetValue(this)}, ";
-            //     if (field.Name == nameof(description)) {
-            //         s = "\"" + s.Replace('\n', ' ').Replace('\t', ' ') + "\"";
-            //     }
-            //     if (field.Name == nameof(originMod) && originMod == null) {
-            //         s = s.Substring(0, s.Length-2) + "NULL";
-            //     }
-            //     ret += s;
-            // }
-            // return ret;
-        }
-        public static Dictionary<string, string[]> saveData = new Dictionary<string, string[]>();
-        public string achievementName = "";
-        public string dateAchieved = "";
-        public string imageFolder = "";
-        public string imageName = "";
-        public string description = "";
-        public string originMod = "";
-        public bool unlocked = false;
-        // This MUST be unique
-        public string internalID = "";
+        this.achievementName = achievementName;
+        this.dateAchieved = dateAchieved;
+        this.imageFolder = imageFolder;
+        this.imageName = imageName;
+        this.description = description;
+        this.originMod = originMod;
+        this.internalID = internalID;
     }
+    public static void TriggerAchievement<T>(RainWorld rainWorld, string ID) where T : Popup {
+        if (Plugin.achievementCWT.TryGetValue(rainWorld, out List<Achievement> achievements) && achievements.FirstOrDefault(x => x.internalID == ID) != default) {
+            saveData[ID][0] = "true";
+            SaveUnlockData();
+            achievements.First(x => x.internalID == ID).unlocked = true;
+            try {
+                T popup = (T)Activator.CreateInstance(typeof(T), bindingAttr: BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, binder: null, args: new object[]{achievements.First(x => x.internalID == ID)}, culture: null);
+                Plugin.popupList.Add(popup);
+            } catch (Exception err) {
+                Debug.LogError("Error creating an instance of an achievement popup. Good luck.\n"+err);
+                throw err;
+            }
+        }
+    }
+    public static void TriggerAchievement(RainWorld rainWorld, string ID) {
+        TriggerAchievement<DefaultPopup>(rainWorld, ID);
+    }
+    internal static void SaveUnlockData()
+    {
+        string save = "";
+        foreach (KeyValuePair<string, string[]> keyValuePair in saveData) {
+            save += keyValuePair.Key + Plugin.DICTIONARY_SEPARATOR + keyValuePair.Value[0] + Plugin.UNLOCK_AND_DATE_SEPARATOR + keyValuePair.Value[1] + Plugin.SAVE_DATA_SEPARATOR;
+        }
+        File.WriteAllText(Plugin.unlockDataPath, save);
+    }
+    internal static void LoadUnlockData()
+    {
+        Debug.Log("Achievement Mod loading unlock data");
+        string[] unlockSaveData = File.ReadAllText(Plugin.unlockDataPath).Replace(Environment.NewLine, string.Empty).Trim('|').Split(Plugin.SAVE_DATA_SEPARATOR);
+        if (unlockSaveData.Length == 1 && unlockSaveData[0] == "") {
+            Debug.Log("Achievement Mod, no unlock data to load");
+            return;
+        }
+        foreach (string unlockData in unlockSaveData) {
+            string data = unlockData.Split(Plugin.DICTIONARY_SEPARATOR)[1];
+            saveData.Add(unlockData.Split(Plugin.DICTIONARY_SEPARATOR)[0], new string[2]{data.Split(Plugin.UNLOCK_AND_DATE_SEPARATOR)[0], data.Split(Plugin.UNLOCK_AND_DATE_SEPARATOR)[1]});
+        }
+        Debug.Log("Achievement Mod loaded unlock data");
+    }
+    internal static string ConvertTime(uint time)
+    {
+        DateTime dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        dateTime = dateTime.AddSeconds(time).ToLocalTime();
+        return dateTime.Day.ToString() + "/" + dateTime.Month.ToString() + "/" + dateTime.Year.ToString();
+    }
+    internal static bool GetSteamIcon(int iconID, out Texture2D? texture)
+    {
+        texture = null;
+        bool result;
+        if (!SteamUtils.GetImageSize(iconID, out uint iconWidth, out uint iconHeight)) {
+            result = false;
+        }
+        else {
+            byte[] iconBuffer = new byte[iconWidth * iconHeight * 4U];
+            if (!SteamUtils.GetImageRGBA(iconID, iconBuffer, iconBuffer.Length)) {
+                result = false;
+            }
+            else {
+                texture = new Texture2D((int)iconWidth, (int)iconHeight, TextureFormat.RGBA32, false, true);
+                texture.LoadRawTextureData(iconBuffer);
+                FlipTextureVertically(texture);
+                texture.Apply();
+                result = true;
+            }
+        }
+        return result;
+    }
+    private static void FlipTextureVertically(Texture2D original)
+    {
+        Color[] originalPixels = original.GetPixels();
+        Color[] newPixels = new Color[originalPixels.Length];
+        int width = original.width;
+        int rows = original.height;
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < rows; y++)
+            {
+                newPixels[x + y * width] = originalPixels[x + (rows - y - 1) * width];
+            }
+        }
+        original.SetPixels(newPixels);
+    }
+    public override string ToString()
+    {
+        string ret = "Achievement, ";
+        ret += $"{nameof(internalID)}: {internalID}, ";
+        ret += $"{nameof(achievementName)}: {achievementName}, ";
+        ret += $"{nameof(dateAchieved)}: {dateAchieved}, ";
+        ret += $"{nameof(imageFolder)}: {imageFolder}, ";
+        ret += $"{nameof(imageName)}: {imageName}, ";
+        ret += $"{nameof(description)}: \"{description.Replace(Environment.NewLine, " ")}\", ";
+        ret += $"{nameof(originMod)}: {originMod ?? "NULL"}";
+        return ret;
+        // string ret = "Achievement, ";
+        // foreach (FieldInfo field in typeof(Achievement).GetFields()) {
+        //     string s = $"{field.Name}: {field.GetValue(this)}, ";
+        //     if (field.Name == nameof(description)) {
+        //         s = "\"" + s.Replace('\n', ' ').Replace('\t', ' ') + "\"";
+        //     }
+        //     if (field.Name == nameof(originMod) && originMod == null) {
+        //         s = s.Substring(0, s.Length-2) + "NULL";
+        //     }
+        //     ret += s;
+        // }
+        // return ret;
+    }
+    internal static Dictionary<string, string[]> saveData = new Dictionary<string, string[]>();
+    public string achievementName = "";
+    public string dateAchieved = "";
+    public string imageFolder = "";
+    public string imageName = "";
+    public string description = "";
+    public string originMod = "";
+    public bool unlocked = false;
+    // This MUST be unique
+    public string internalID = "";
 }

@@ -1,8 +1,7 @@
 using Menu;
 using UnityEngine;
-using static AchievementMenu.Plugin;
 
-namespace AchievementMenu;
+namespace RWAchievements;
 
 public class AchievementPage : Page
 {

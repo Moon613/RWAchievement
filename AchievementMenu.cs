@@ -4,12 +4,11 @@ using System.Linq;
 using Menu;
 using Menu.Remix;
 using Menu.Remix.MixedUI;
-using RWCustom;
 using UnityEngine;
-using static AchievementMenu.Plugin;
+using static RWAchievements.Plugin;
 
-namespace AchievementMenu;
-public class AchievementMenu : Menu.Menu
+namespace RWAchievements;
+internal class AchievementMenu : Menu.Menu
 {
     public int currentSelectedPage = 2;
     float ScreenWidth => manager.rainWorld.options.ScreenSize.x;
@@ -31,7 +30,7 @@ public class AchievementMenu : Menu.Menu
     public MenuTabWrapper tabWrapper;
     public OpScrollBox achievementScroll;
     public new SimpleButton backObject;
-    public AchievementMenu(ProcessManager processManager) : base(processManager, Plugin.AchievementMenu) {
+    public AchievementMenu(ProcessManager processManager) : base(processManager, Plugin.AchievementMenuID) {
         currentPage = 0;
 
         pageStepsTaken = PAGE_STEPS;
@@ -77,7 +76,7 @@ public class AchievementMenu : Menu.Menu
         // Removes the mouseCursor from the subObjects.
         pages[1].subObjects.Clear();
         
-        if (achievements.TryGetValue(manager.rainWorld, out List<Achievement> achievementList)) {
+        if (achievementCWT.TryGetValue(manager.rainWorld, out List<Achievement> achievementList)) {
             for (int i = 0; i < achievementList.Count; i++) {
                 Achievement achievement = achievementList[i];
                 // Debug.Log($"Achievement Mod: {achievement.achievementName}, {achievement.imageFolder}, {achievement.imageName}, {achievement.description}");
@@ -87,7 +86,7 @@ public class AchievementMenu : Menu.Menu
         #endregion
 
         #region List View (Part of page 1)
-        if (achievements.TryGetValue(manager.rainWorld, out List<Achievement> achievementList1)) {
+        if (achievementCWT.TryGetValue(manager.rainWorld, out List<Achievement> achievementList1)) {
             int scrollMenuRows = Mathf.CeilToInt(achievementList1.Count/3f);
             const int buttonHeight = 50;
 
