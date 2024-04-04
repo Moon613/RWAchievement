@@ -1,0 +1,11 @@
+{
+	"id": "moon.achievements",
+	"name": "Achievements",
+	"version": "1.0",
+	"hide_version": false,
+	"authors": "Moon",
+	"description": "yippekiyay you want em and we gottem",
+	"requirements": [],
+	"requirements_names": [],
+	"tags" : []
+}
