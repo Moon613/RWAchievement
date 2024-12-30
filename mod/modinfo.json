@@ -1,11 +1,11 @@
 {
 	"id": "moon.achievements",
-	"name": "Achievements",
+	"name": "RWAchievements",
 	"version": "1.0",
 	"hide_version": false,
-	"authors": "Moon",
-	"description": "yippekiyay you want em and we gottem",
+	"authors": "Code: Moon\n Artists:\nstormthecat\nSAPantry\nnotocorda\nvela_pulsar",
+	"description": "A feature addition mod that lets you view your Steam achievements.\nNow with modding support!",
 	"requirements": [],
 	"requirements_names": [],
-	"tags" : []
+	"tags" : ["Dependency", "Tools"]
 }
