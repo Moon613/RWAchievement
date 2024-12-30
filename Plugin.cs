@@ -12,8 +12,13 @@ using System.Linq;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using System.Reflection;
+using MenuShader = Menu.MenuDepthIllustration.MenuShader;
 
 #pragma warning disable CS0618
+#pragma warning disable IDE0090
+#pragma warning disable IDE0290
+#pragma warning disable IDE0028
+#pragma warning disable IDE0300
 
 [module: UnverifiableCode]
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
@@ -26,7 +31,7 @@ public class Plugin : BaseUnityPlugin
     public static ProcessManager.ProcessID AchievementMenuID => new ProcessManager.ProcessID(nameof(AchievementMenuID), true);
     public static ConditionalWeakTable<RainWorld, List<Achievement>> achievementCWT = new();
     internal static ManualLogSource? logger;
-    public static FContainer achievementContainer = new FContainer();
+    public static FContainer achievementPopupContainer = new FContainer();
     public static List<Popup> popupList = new List<Popup>();
     private static bool postInit = false;
     private const string MOD_ID = "moon.achievements";
@@ -34,8 +39,8 @@ public class Plugin : BaseUnityPlugin
     internal const char DICTIONARY_SEPARATOR = '~';
     internal const char SAVE_DATA_SEPARATOR = '|';
     internal const char UNLOCK_AND_DATE_SEPARATOR = '`';
-    public const int POPUP_WIDTH = 240;
-    public const int POPUP_HEIGHT = 95;
+    internal const int POPUP_WIDTH = 240;
+    internal const int POPUP_HEIGHT = 95;
     internal static string unlockDataPath = "";
     public void OnEnable()
     {
@@ -75,8 +80,7 @@ public class Plugin : BaseUnityPlugin
             popup.GrafUpdate(timeStacker);
         }
     }
-    private static void RainWorld_PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
-    {
+    private static void RainWorld_PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self) {
         orig(self);
         if (!postInit && achievementCWT.TryGetValue(self, out List<Achievement> achievementList)) {
             Futile.stage.AddChild(achievementContainer);
@@ -114,10 +118,12 @@ public class Plugin : BaseUnityPlugin
 
             #region LoadCustomAchievements
             Achievement.LoadUnlockData();
+            // Gathers all the achievement json files from other mods
             string[] files = AssetManager.ListDirectory(ACHIEVEMENT_FOLDER, false, true).Where(file => file.EndsWith(".json")).ToArray();
             for (int i = 0; i < files.Length; i++) {
+                // Make sure it works on Windows and linux and such
+                files[i] = files[i].Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
                 if (File.Exists(files[i])) {
-                    files[i] = files[i].Replace('/', Path.DirectorySeparatorChar);
                     try {
                         // Try to parse the json file.
                         Achievement? achi = JObject.Parse(File.ReadAllText(files[i])).ToObject<Achievement>();
@@ -125,7 +131,7 @@ public class Plugin : BaseUnityPlugin
                         if (achi is not null) {
                             // Make sure an internalID is specified
                             if (achi.internalID == null) {
-                                throw new IOException("Achievement Mod: Please give your achievement an internal ID");
+                                throw new ArgumentException("Achievement Mod: Please give your achievement an internal ID");
                             }
 
                             // Make sure the internal id does not contain any characters that would cause a parsing error.
@@ -134,7 +140,7 @@ public class Plugin : BaseUnityPlugin
                                 throw new IOException($"Achievement Mod: Invalid character in internal ID, invalid chars: {DICTIONARY_SEPARATOR}{SAVE_DATA_SEPARATOR}{UNLOCK_AND_DATE_SEPARATOR}");
                             }
                             /*******************
-                            Achievement.dictionary == save data that was loaded in in Achievement.LoadUnlockData()
+                            Achievement.saveData == save data that was loaded in in Achievement.LoadUnlockData()
                             achi == New achievement that was loaded from a mod's .json file for an achievement
                             *******************/
                             // Detects if this is a new achievement with no unlock save data, and adds it to the save data is so.
@@ -145,11 +151,11 @@ public class Plugin : BaseUnityPlugin
                             }
                             // If one is found, set the current Achievement data to what is in the unlock save data
                             else {
-                                achi.unlocked = (Achievement.saveData[achi.internalID][0] == "true") ? true : false;
+                                achi.unlocked = Achievement.saveData[achi.internalID][0] == "true";
                                 achi.dateAchieved = Achievement.saveData[achi.internalID][1];
                             }
                             // Make sure that the fields of the achievement are not null.
-                            foreach (FieldInfo field in typeof(Achievement).GetFields()) {
+                            foreach (FieldInfo field in typeof(Achievement).GetFields(BindingFlags.Public)) {
                                 // Skip the static dictionary field
                                 if (field.Name == nameof(Achievement.saveData)) {
                                     continue;

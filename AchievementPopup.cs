@@ -5,10 +5,13 @@ using System.IO;
 using System.Linq;
 
 namespace RWAchievements;
+#pragma warning disable IDE0017
+#pragma warning disable IDE0090
+#pragma warning disable IDE0290
 
 public abstract class Popup
 {
-    private Achievement _achievement;
+    private readonly Achievement _achievement;
     public Vector2 pos;
     public Vector2 lastPos;
     public Popup(Achievement achievement) {
@@ -43,7 +46,7 @@ public class DefaultPopup : Popup
         background.width = POPUP_WIDTH;
         background.height = POPUP_HEIGHT;
         background.shader = Custom.rainWorld.Shaders["AchievementPopup"];
-        achievementContainer.AddChild(background);
+        achievementPopupContainer.AddChild(background);
 
         image = new FSprite("Futile_White");
         if (Futile.atlasManager.DoesContainElementWithName(GetAchievement().imageName)) {
@@ -78,13 +81,13 @@ public class DefaultPopup : Popup
         image.scaleX = IconSize/originalSize.x;
         image.scaleY = IconSize/originalSize.y;
         image.SetPosition(pos);
-        achievementContainer.AddChild(image);
+        achievementPopupContainer.AddChild(image);
         image.MoveToFront();
 
         text = new FLabel(Custom.GetFont(), GetAchievement().achievementName);
         text.alignment = FLabelAlignment.Left;
         text.SetPosition(pos);
-        achievementContainer.AddChild(text);
+        achievementPopupContainer.AddChild(text);
         text.MoveToFront();
     }
     public override void GrafUpdate(float timeStacker) {

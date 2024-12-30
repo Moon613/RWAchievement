@@ -8,6 +8,10 @@ using UnityEngine;
 using static RWAchievements.Plugin;
 
 namespace RWAchievements;
+#pragma warning disable IDE0090
+#pragma warning disable IDE0220
+#pragma warning disable IDE0290
+#pragma warning disable IDE0305
 internal class AchievementMenu : Menu.Menu
 {
     public int currentSelectedPage = 2;
@@ -17,10 +21,10 @@ internal class AchievementMenu : Menu.Menu
     float GreatestXPos => (ScreenWidth/2f) + ((pages[1].subObjects.Count-2)*ScreenWidth) - pages[1].pos.x;
     float SmallestXPos => -ScreenWidth - 0.5f*ScreenWidth - pages[1].pos.x;
     const int PAGE_STEPS = 30;
-    float pageMovementPerStep;
+    readonly float pageMovementPerStep;
     int pageStepsTaken;
     const int DROPDOWN_MENU_STEPS = 4;
-    float dropdownMovementPerStep;
+    readonly float dropdownMovementPerStep;
     int dropdownStepsTaken;
     bool viewingList = false;
     const int MINIMUM_SCREEN_WIDTH = 1024;
@@ -39,7 +43,7 @@ internal class AchievementMenu : Menu.Menu
         dropdownStepsTaken = 0;
         dropdownMovementPerStep = ScreenHeight/DROPDOWN_MENU_STEPS;
 
-        #region Page 1
+        #region Main Page
         pages.Add(new Page(this, null, "main", 0){pos=new Vector2(1366, 768) - manager.rainWorld.options.ScreenSize});
         tabWrapper = new MenuTabWrapper(this, pages[0]);
         pages[0].subObjects.Add(tabWrapper);
@@ -70,7 +74,7 @@ internal class AchievementMenu : Menu.Menu
         pages[0].subObjects.Add(listView);
         #endregion
 
-        #region Page 2
+        #region Achievement Pages
         pages.Add(new Page(this, null, "achipages", 1){pos=new Vector2(1366, 768) - manager.rainWorld.options.ScreenSize});
         adjustForPageOffsetDueToResolution = 0.5f*pages[1].pos;
         // Removes the mouseCursor from the subObjects.

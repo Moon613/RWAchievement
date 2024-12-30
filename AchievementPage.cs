@@ -2,6 +2,9 @@ using Menu;
 using UnityEngine;
 
 namespace RWAchievements;
+#pragma warning disable IDE0090
+#pragma warning disable IDE0028
+#pragma warning disable IDE0044
 
 public class AchievementPage : Page
 {
