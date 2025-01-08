@@ -48,14 +48,49 @@ public class AchievementPage : Page
             subObjects.Add(origin);
         }
         
-        // Add the Achievement image
-        image = new MenuIllustration(menu, this, achievement.imageFolder, achievement.unlocked? achievement.imageName : "multiplayerportrait02", new Vector2(0, 0.16f*screenCenter.y), true, true);
-        if (achievement.originMod == "Steam") {
-            var newElementSize = image.sprite.element.sourceSize;
-            image.sprite.scaleX = IconSize / newElementSize.x;
-            image.sprite.scaleY = IconSize / newElementSize.y;
+        // Add the Achievement image or images.
+        float offsetHeight = 0.1f*ScreenCenter.y;
+        // If it is just a flat image, meaning the images array is null. Or trigger if the achievement isn't unlocked, as there is no need to display a full depth scene
+        if (achievement.images == null || !achievement.unlocked || scene.flatMode) {
+            MenuIllustration image = new MenuIllustration(menu, this, achievement.imageFolder, achievement.unlocked? achievement.flatImageName : "multiplayerportrait02", new Vector2(0, offsetHeight), true, true);
+            if (achievement.originMod == "Steam") {
+                // If the image is directly from Steam, resize it
+                if (achievement.imageFolder == "") {
+                    Vector2 newElementSize = image.sprite.element.sourceSize;
+                    image.sprite.scaleX = IconSize / newElementSize.x;
+                    image.sprite.scaleY = IconSize / newElementSize.y;
+                }
+                // Otherwise it's a custom image and needs to be positioned in the center of the screen
+                else if (image.sprite.width >= Custom.GetScreenOffsets()[1]) {
+                    image.pos = Vector2.zero;
+                }
+            }
+            image.sprite.MoveToBack();
+            menuIllustrations.Add(image);
+            scene.AddIllustration(image);
         }
-        subObjects.Add(image);
+        // This loads all the depth illustrations
+        else {
+            scene.sceneFolder = achievement.imageFolder;
+            scene.idleDepths = achievement.idleDepths;
+            Debug.Log(achievement.flatImageName);
+            Debug.Log(achievement.images.Length);
+            for (int i = 0; i < achievement.images.Length; i++) {
+                MenuDepthIllustration menuDepthIllustration = new MenuDepthIllustration(menu, scene, achievement.imageFolder, achievement.images[i], new Vector2(0, offsetHeight), achievement.imageDepths[i], achievement.imageShaders[i]);
+                if (i == 0) {
+                    menuDepthIllustration.sprite.MoveToBack();
+                }
+                else {
+                    menuDepthIllustration.sprite.MoveInFrontOfOtherNode(menuIllustrations[i-1].sprite);
+                }
+                // if (menuDepthIllustration.sprite.width >= Custom.GetScreenOffsets()[1]) {
+                //     menuDepthIllustration.pos = Vector2.zero;
+                // }
+                menuIllustrations.Add(menuDepthIllustration);
+                scene.AddIllustration(menuDepthIllustration);
+            }
+            scene.RefreshPositions();
+        }
         
         // Add the description
         description = new MenuLabel(menu, this, achievement.unlocked? achievement.description : "???", new Vector2(0, -0.5f*ScreenCenter.y), Vector2.zero, true);

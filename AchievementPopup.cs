@@ -65,18 +65,18 @@ public class DefaultPopup : Popup
         achievementPopupContainer.AddChild(background);
 
         image = new FSprite("Futile_White");
-        if (Futile.atlasManager.DoesContainElementWithName(GetAchievement().imageName)) {
-            image.element = Futile.atlasManager.GetElementWithName(GetAchievement().imageName);
+        if (Futile.atlasManager.DoesContainElementWithName(GetAchievement().flatImageName)) {
+            image.element = Futile.atlasManager.GetElementWithName(GetAchievement().flatImageName);
         }
-        else if (Futile.atlasManager.GetAtlasWithName(GetAchievement().imageName) != null)
+        else if (Futile.atlasManager.GetAtlasWithName(GetAchievement().flatImageName) != null)
         {
-            FAtlas atlasWithName = Futile.atlasManager.GetAtlasWithName(GetAchievement().imageName);
+            FAtlas atlasWithName = Futile.atlasManager.GetAtlasWithName(GetAchievement().flatImageName);
             image.element = atlasWithName.elements.First();
         }
         else {
             string folder = (GetAchievement().imageFolder == "")? "illustrations" : GetAchievement().imageFolder;
 			Texture2D texture = new Texture2D(1, 1, TextureFormat.ARGB32, false);
-			string str = AssetManager.ResolveFilePath(folder + Path.DirectorySeparatorChar.ToString() + GetAchievement().imageName + ".png");
+			string str = AssetManager.ResolveFilePath(folder + Path.DirectorySeparatorChar.ToString() + GetAchievement().flatImageName + ".png");
 			string str2 = "file:///";
 			try
 			{
@@ -89,8 +89,8 @@ public class DefaultPopup : Popup
 					string.Format(format: "Error loading file: {0}", arg)
 				});
 			}
-            Futile.atlasManager.UnloadAtlas(GetAchievement().imageName);
-            var atlas = Futile.atlasManager.LoadAtlasFromTexture(GetAchievement().imageName, texture, false);
+            Futile.atlasManager.UnloadAtlas(GetAchievement().flatImageName);
+            var atlas = Futile.atlasManager.LoadAtlasFromTexture(GetAchievement().flatImageName, texture, false);
             image.element = atlas.elements.First();
         }
         Vector2 originalSize = image.element.sourceSize;

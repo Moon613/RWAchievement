@@ -28,7 +28,253 @@ namespace RWAchievements;
 [BepInPlugin(MOD_ID, "Rain World Achievements", "1.0.0")]
 internal class Plugin : BaseUnityPlugin
 {
-    public static ProcessManager.ProcessID AchievementMenuID => new ProcessManager.ProcessID(nameof(AchievementMenuID), true);
+    /**********************************************
+    The format for the set in the dictionary goes as follows:
+    - List 1: shaders for each image, first shader goes to first image
+    - List 2: idle camera depths, should be set to around the middle of the image depths
+    - List 3: the depths of the depth illustrations, the lower the number the more it moves around
+    **********************************************/
+    private static readonly Dictionary<string, (List<MenuShader>, List<float>, List<float>)> IDToInfo = new(){
+        { "The Survivor", 
+            (
+                new List<MenuShader>(){MenuShader.Basic, MenuShader.Basic, MenuShader.Basic, MenuShader.Basic, MenuShader.Basic},
+                new List<float>(){10f, 10.75f, 9.9f},
+                new List<float>(){4,10,10,10,9}
+            )
+        },
+        { "A New Friend",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Six Grains of Gravel, Mountains Abound",
+            (
+                new List<MenuShader>(){MenuShader.Normal, MenuShader.Normal, MenuShader.Overlay, MenuShader.Normal, MenuShader.Normal, MenuShader.LightEdges, MenuShader.LightEdges, MenuShader.LightEdges},
+                new List<float>(){5, 4, 4, 4.5f},
+                new List<float>(){9, 8.9f, 1, 5.2f, 4.8f, 4.5f, 4, 4, 3.9f}
+            )
+        },
+        { "The Saint",
+            (
+                new List<MenuShader>(){MenuShader.Basic, MenuShader.Basic, MenuShader.Basic},
+                new List<float>(){4f, 4.75f, 3.9f},
+                new List<float>(){3, 4, 8}
+            )
+        },
+        { "The Journey",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Ascension",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Monk",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Two Sprouts, Twelve Brackets",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Chieftain",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Nineteen Spades, Endless Reflections",
+            (
+                new List<MenuShader>(){MenuShader.Lighten, MenuShader.LightEdges, MenuShader.SoftLight, MenuShader.SoftLight, MenuShader.Normal},
+                new List<float>(){4.6f, 4.5f, 4.4f},
+                new List<float>(){5f, 4.5f, 2.8f, 2.4f, 2f}
+            )
+        },
+        { "Stolen Enlightenment",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Outlaw",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Droplets upon Five Large Droplets",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Dragon Slayer",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "A Bell, Eighteen Amber Beads",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Four Needles under Plentiful Leaves",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Scholar",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Pilgrimage",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Hunter",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Closure",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Migration",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Nomad",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "An Old Friend",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Messenger",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "A Helping Hand",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Friend",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Pilgrim",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Mother",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Cycle",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Wanderer",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Within Time",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "The Martyr",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Champion",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        },
+        { "Expedition Leader",
+            (
+                new List<MenuShader>(){},
+                new List<float>(){1,2,3,4},
+                new List<float>(){}
+            )
+        }
+    };
+    public static readonly ProcessManager.ProcessID AchievementMenuID = new ProcessManager.ProcessID(nameof(AchievementMenuID), true);
     public static ConditionalWeakTable<RainWorld, List<Achievement>> achievementCWT = new();
     internal static ManualLogSource? logger;
     public static FContainer achievementPopupContainer = new FContainer();
@@ -101,11 +347,30 @@ internal class Plugin : BaseUnityPlugin
                     Futile.atlasManager.LoadAtlasFromTexture(achiInternalName, texture, false);
                 }
 
+                string imageFolder = "";
+                string imageName = achiInternalName;
+                string[]? images = null;
+                // If a custom flat image for the achievement exists, use that instead.
+                if (File.Exists(AssetManager.ResolveFilePath("achievementImages" + Path.DirectorySeparatorChar + achiName + ".png"))) {
+                    imageFolder = "achievementImages";
+                    imageName = achiName;
+                }
+                // If depth images are found, it uses those instead. It finds them by looking in the directory for public the name of the achievement with _1 appended to it
+                if (File.Exists(AssetManager.ResolveFilePath("achievementImages" + Path.DirectorySeparatorChar + "depthIllustrations" + Path.DirectorySeparatorChar + achiName + "_1.png"))) {
+                    imageFolder = "achievementImages" + Path.DirectorySeparatorChar + "depthIllustrations";
+                    imageName = achiName;
+                    string[] arr = AssetManager.ListDirectory(imageFolder, false, true).Where(file => file.Contains(achiName.ToLower())).ToArray();
+                    images = new string[arr.Length];
+                    for (int j = 0; j < arr.Length; j++) {
+                        images[j] = imageName + "_" + (j+1);
+                    }
+                }
+                // If the achievement is unlocked, use all the loaded data, otherwise obfuscate it
                 if (unlocked) {
-                    achievementList.Add(new Achievement(achiName, time, "", achiInternalName, achiDesc, "Steam", achiInternalName){unlocked=true});
+                    achievementList.Add(new Achievement(achiName, time, imageFolder, imageName, achiDesc, "Steam", achiInternalName, images, IDToInfo[achiName].Item1, IDToInfo[achiName].Item2, IDToInfo[achiName].Item3){unlocked=true});
                 }
                 else {
-                    achievementList.Add(new Achievement("???", "?", "", "multiplayerportrait02", "???", "Steam", achiInternalName){unlocked=false});
+                    achievementList.Add(new Achievement("???", "?", "", "multiplayerportrait02", "???", "Steam", achiInternalName, null, null, null, null){unlocked=false});
                 }
             }
             #endregion
@@ -121,13 +386,15 @@ internal class Plugin : BaseUnityPlugin
                 if (File.Exists(files[i])) {
                     try {
                         // Try to parse the json file.
-                        Achievement? achi = JObject.Parse(File.ReadAllText(files[i])).ToObject<Achievement>();
-                        // If successful it will not be null
+                        Achievement? achi = Achievement.ParseFromJson(JObject.Parse(File.ReadAllText(files[i])));
+                        
                         if (achi is not null) {
                             // Make sure an internalID is specified
                             if (achi.internalID == null) {
                                 throw new ArgumentException("Achievement Mod: Please give your achievement an internal ID");
                             }
+
+                            achi.imageFolder = achi.imageFolder.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
 
                             // Make sure the internal id does not contain any characters that would cause a parsing error.
                             char[] invalidChars = new[] {DICTIONARY_SEPARATOR, SAVE_DATA_SEPARATOR, UNLOCK_AND_DATE_SEPARATOR};
@@ -156,7 +423,7 @@ internal class Plugin : BaseUnityPlugin
                                     continue;
                                 }
                                 // Ensure no null fields
-                                if (field.Name != nameof(Achievement.originMod) && field.GetValue(achi) == null) {
+                                if (field.Name != nameof(Achievement.originMod) && field.Name != nameof(Achievement.images) && field.GetValue(achi) == null) {
                                     Debug.LogWarning($"Value for {field.Name} is null in achievement {files[i].Substring(files[i].IndexOf(ACHIEVEMENT_FOLDER) + ACHIEVEMENT_FOLDER.Length + 1)}");
                                     field.SetValue(achi, "");
                                 }
@@ -186,19 +453,95 @@ internal class Plugin : BaseUnityPlugin
 }
 public class Achievement
 {
-    public Achievement(string achievementName, string dateAchieved, string imageFolder, string imageName, string description, string originMod, string internalID)
+    internal Achievement(string achievementName, string dateAchieved, string imageFolder, string flatImageName, string description, string? originMod, string internalID, string[]? images, List<MenuShader>? imageShaders, List<float>? idleDepths, List<float>? imageDepths)
     {
         this.achievementName = achievementName;
         this.dateAchieved = dateAchieved;
         this.imageFolder = imageFolder;
-        this.imageName = imageName;
+        this.flatImageName = flatImageName;
         this.description = description;
         this.originMod = originMod;
         this.internalID = internalID;
+        this.images = images;
+        this.imageShaders = imageShaders ?? new List<MenuShader>();
+        this.idleDepths = idleDepths ?? new List<float>();
+        this.imageDepths = imageDepths ?? new List<float>();
+    }
+    internal static Achievement? ParseFromJson(JObject? Jobj) {
+        if (Jobj == null) {
+            return null;
+        }
+        string? id = (string?)Jobj["id"];
+        if (id == null) {
+            Debug.LogWarning("[Warning : Rain World Achievements] No id found for an acheivement, could not find id to parse.");
+            return null;
+        }
+
+        string name = (string?)Jobj["name"] ?? "";
+        // If a folder cannot be found, then later when loading "Illustrations" folder will be used instead of "".
+        string folder = (string?)Jobj["imageFolder"] ?? "";
+        string flat = (string?)Jobj["flat"] ?? "";
+        string desc = (string?)Jobj["description"] ?? "";
+        // origin is intended to be able to be null. If it is null the achievement won't display what added it, which is an intended feature.
+        string? origin = (string?)Jobj["origin"];
+        // This may need a default case instead of being null, but the base game should be able to handle null values here.
+        List<float>? idleDepths = Jobj["idleDepths"]?.Values<float>().ToList();
+
+        List<string>? depthImages = new();
+        List<float>? imageDepths = new();
+        List<MenuShader>? imageShaders = new();
+
+        if (Jobj["depthIllustrations"] is JToken jToken) {
+            foreach (var depthImageData in jToken.Children()) {
+                if ((string?)depthImageData["image"] is string img && (float?)depthImageData["depth"] is float dpth && (string?)depthImageData["shader"] is string shdr) {
+                    depthImages.Add(img);
+                    imageDepths.Add(dpth);
+                    switch (shdr.ToLower()) {
+                        default:
+                        case "basic":
+                            imageShaders.Add(MenuShader.Basic);
+                            break;
+                        case "normal":
+                            imageShaders.Add(MenuShader.Normal);
+                            break;
+                        case "lighten":
+                            imageShaders.Add(MenuShader.Lighten);
+                            break;
+                        case "lightedges":
+                            imageShaders.Add(MenuShader.LightEdges);
+                            break;
+                        case "rain":
+                            imageShaders.Add(MenuShader.Rain);
+                            break;
+                        case "overlay":
+                            imageShaders.Add(MenuShader.Overlay);
+                            break;
+                        case "softlight":
+                            imageShaders.Add(MenuShader.SoftLight);
+                            break;
+                        case "multiply":
+                            imageShaders.Add(MenuShader.Multiply);
+                            break;
+                    }
+                }
+                else {
+                    Debug.LogWarning($"[Warning : Rain World Achievements] Missing data for a depth illustration in achievement {name}. Failed to parse.");
+                }
+            }
+        }
+        else {
+            idleDepths = null;
+            depthImages = null;
+            imageDepths = null;
+            imageShaders = null;
+        }
+
+        return new Achievement(name, "", folder, flat, desc, origin, id, depthImages?.ToArray(), imageShaders, idleDepths, imageDepths);
     }
     public static void TriggerAchievement<T>(RainWorld rainWorld, string ID) where T : Popup {
         if (Plugin.achievementCWT.TryGetValue(rainWorld, out List<Achievement> achievements) && achievements.FirstOrDefault(x => x.internalID == ID) != default) {
             saveData[ID][0] = "true";
+            saveData[ID][1] = DateTime.Today.ToShortDateString();
             SaveUnlockData();
             achievements.First(x => x.internalID == ID).unlocked = true;
             try {
@@ -284,31 +627,27 @@ public class Achievement
         ret += $"{nameof(internalID)}: {internalID}, ";
         ret += $"{nameof(achievementName)}: {achievementName}, ";
         ret += $"{nameof(dateAchieved)}: {dateAchieved}, ";
-        ret += $"{nameof(imageFolder)}: {imageFolder}, ";
-        ret += $"{nameof(imageName)}: {imageName}, ";
-        ret += $"{nameof(description)}: \"{description.Replace(Environment.NewLine, " ")}\", ";
-        ret += $"{nameof(originMod)}: {originMod ?? "NULL"}";
+        ret += $"{nameof(imageFolder)}: {(imageFolder == ""? "Illustrations" : imageFolder)}, ";
+        ret += $"{nameof(flatImageName)}: {flatImageName}, ";
+        ret += $"{nameof(description)}: \"{description.Replace("\n", " ").Replace("\r", " ").Replace("\r\n", " ")}\", ";
+        ret += $"{nameof(originMod)}: {originMod ?? "NULL"}, ";
+        ret += $"{nameof(images)}: {(images == null? "NULL" : string.Join(" ", images))}, ";
+        ret += $"{nameof(imageShaders)}: {string.Join(" ", imageShaders)}, ";
+        ret += $"{nameof(idleDepths)}: {string.Join(" ", idleDepths)}, ";
+        ret += $"{nameof(imageDepths)}: {string.Join(" ", imageDepths)}, ";
         return ret;
-        // string ret = "Achievement, ";
-        // foreach (FieldInfo field in typeof(Achievement).GetFields()) {
-        //     string s = $"{field.Name}: {field.GetValue(this)}, ";
-        //     if (field.Name == nameof(description)) {
-        //         s = "\"" + s.Replace('\n', ' ').Replace('\t', ' ') + "\"";
-        //     }
-        //     if (field.Name == nameof(originMod) && originMod == null) {
-        //         s = s.Substring(0, s.Length-2) + "NULL";
-        //     }
-        //     ret += s;
-        // }
     }
     internal static Dictionary<string, string[]> saveData = new Dictionary<string, string[]>();
     public string achievementName = "";
     public string dateAchieved = "";
     public string imageFolder = "";
-    public string imageName = "";
+    public string flatImageName = "";
     public string[]? images = null;
+    public List<MenuShader> imageShaders = new List<MenuShader>();
+    public List<float> idleDepths = new List<float>();
+    public List<float> imageDepths = new List<float>();
     public string description = "";
-    public string originMod = "";
+    public string? originMod = null;
     public bool unlocked = false;
     // This MUST be unique
     public string internalID = "";
