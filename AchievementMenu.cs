@@ -18,7 +18,7 @@ internal class AchievementMenu : Menu.Menu
     float ScreenWidth => manager.rainWorld.options.ScreenSize.x;
     float ScreenHeight => manager.rainWorld.options.ScreenSize.y;
     Vector2 ScreenCenter => manager.rainWorld.options.ScreenSize/2f;
-    float GreatestXPos => (ScreenWidth/2f) + ((pages[1].subObjects.Count-2)*ScreenWidth) - pages[1].pos.x;
+    float GreatestXPos => (ScreenWidth/2f) + ((pages[1].subObjects.FindAll(obj => obj is AchievementPage).Count-2)*ScreenWidth) - pages[1].pos.x;
     float SmallestXPos => -ScreenWidth - 0.5f*ScreenWidth - pages[1].pos.x;
     const int PAGE_STEPS = 30;
     readonly float pageMovementPerStep;
@@ -29,6 +29,7 @@ internal class AchievementMenu : Menu.Menu
     bool viewingList = false;
     const int MINIMUM_SCREEN_WIDTH = 1024;
     public int backCooldown = 0;
+    internal int drawAllScenes = 0;
     public BigArrowButton prevButton;
     public BigArrowButton nextButton;
     public MenuTabWrapper tabWrapper;
@@ -155,7 +156,9 @@ internal class AchievementMenu : Menu.Menu
     }
     public override void Update()
     {
-        // Debug.Log($"Achievement Mod menu update, current selected page: {currentSelectedPage}");
+        if (drawAllScenes > 0) {
+            drawAllScenes--;
+        }
         base.Update();
         if (Input.GetKey(KeyCode.Escape) && backCooldown == 0)
         {
@@ -179,7 +182,7 @@ internal class AchievementMenu : Menu.Menu
         }
         // This moves all pages to the right
         if (pageStepsTaken < PAGE_STEPS) {
-            foreach (AchievementPage page in pages[1].subObjects) {
+            foreach (AchievementPage page in pages[1].subObjects.FindAll(obj => obj is AchievementPage)) {
                 if (Mathf.Round(page.pos.x) >= GreatestXPos) {
                     page.pos.x = SmallestXPos;
                     page.prevPos = page.pos;
@@ -191,7 +194,7 @@ internal class AchievementMenu : Menu.Menu
         }
         // This moves all pages to the left
         if (pageStepsTaken > PAGE_STEPS) {
-            foreach (AchievementPage page in pages[1].subObjects) {
+            foreach (AchievementPage page in pages[1].subObjects.FindAll(obj => obj is AchievementPage)) {
                 if (Mathf.Round(page.pos.x) <= SmallestXPos) {
                     page.pos.x = GreatestXPos;
                     page.prevPos = page.pos;
@@ -206,7 +209,7 @@ internal class AchievementMenu : Menu.Menu
             nextButton.buttonBehav.greyedOut = false;
             prevButton.buttonBehav.greyedOut = false;
             // This *should* make it so that there are no floating point errors in the x position.
-            foreach (AchievementPage page in pages[1].subObjects.Cast<AchievementPage>()) {
+            foreach (AchievementPage page in pages[1].subObjects.FindAll(obj => obj is AchievementPage)) {
                 page.pos.x = Mathf.RoundToInt(page.pos.x);
                 page.prevPos = page.pos;
                 // Debug.Log($"Achievement Mod alignment test: {page.pos.x%20}");
@@ -233,11 +236,11 @@ internal class AchievementMenu : Menu.Menu
         for (int i = 0; i < achievementScrollAsList.Count; i++) {
             if ((achievementScrollAsList[i] as AchievementOPSimpleButton)?.ID == (sennder as AchievementOPSimpleButton)?.ID) {
                 JumpToAchievement(i);
-                if (currentSelectedPage >= pages[1].subObjects.Count) {
+                if (currentSelectedPage >= pages[1].subObjects.FindAll(obj => obj is AchievementPage).Count) {
                     currentSelectedPage -= achievementScrollAsList.Count;
                 }
                 if (currentSelectedPage < 0) {
-                    currentSelectedPage = pages[1].subObjects.Count-currentSelectedPage;
+                    currentSelectedPage = pages[1].subObjects.FindAll(obj => obj is AchievementPage).Count-currentSelectedPage;
                 }
                 Debug.Log($"Achievement Mod Index of page: {i}, currently selected page: {currentSelectedPage}");
                 break;
@@ -247,7 +250,9 @@ internal class AchievementMenu : Menu.Menu
     }
     public void JumpToAchievement(int pageNum)
     {
-        foreach (AchievementPage page in pages[1].subObjects) {
+        foreach (AchievementPage page in pages[1].subObjects.FindAll(obj => obj is AchievementPage)) {
+            page.scene.hidden = false;
+            drawAllScenes = 40;
             page.pos.x -= (pageNum-currentSelectedPage)*PAGE_STEPS*pageMovementPerStep;
             if (page.pos.x > GreatestXPos) {
                 page.pos.x -= GreatestXPos + -SmallestXPos;
@@ -274,7 +279,7 @@ internal class AchievementMenu : Menu.Menu
             pageStepsTaken = 2*PAGE_STEPS;
             nextButton.buttonBehav.greyedOut = true;
             prevButton.buttonBehav.greyedOut = true;
-            if (currentSelectedPage >= pages[1].subObjects.Count) {
+            if (currentSelectedPage >= pages[1].subObjects.FindAll(obj => obj is AchievementPage).Count) {
                 currentSelectedPage = 0;
             }
             Debug.Log($"Achievement Mod next page, current selected page: {currentSelectedPage}");
@@ -286,7 +291,7 @@ internal class AchievementMenu : Menu.Menu
             nextButton.buttonBehav.greyedOut = true;
             prevButton.buttonBehav.greyedOut = true;
             if (currentSelectedPage < 0) {
-                currentSelectedPage = pages[1].subObjects.Count-1;
+                currentSelectedPage = pages[1].subObjects.FindAll(obj => obj is AchievementPage).Count-1;
             }
             Debug.Log($"Achievement Mod prev page, current selected page: {currentSelectedPage}");
         }
