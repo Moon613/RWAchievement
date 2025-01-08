@@ -52,7 +52,6 @@ internal class AchievementMenu : Menu.Menu
         tabWrapper = new MenuTabWrapper(this, pages[0]);
         pages[0].subObjects.Add(tabWrapper);
 
-        pages[0].subObjects.Add(new InteractiveMenuScene(this, pages[0], MenuScene.SceneID.Empty));
         
         const int BigArrowButtonWidth = 25;
         Vector2 adjustForPageOffsetDueToResolution = 0.5f*pages[0].pos;
