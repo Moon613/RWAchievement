@@ -26,7 +26,7 @@ using MenuShader = Menu.MenuDepthIllustration.MenuShader;
 namespace RWAchievements;
 
 [BepInPlugin(MOD_ID, "Rain World Achievements", "1.0.0")]
-public class Plugin : BaseUnityPlugin
+internal class Plugin : BaseUnityPlugin
 {
     public static ProcessManager.ProcessID AchievementMenuID => new ProcessManager.ProcessID(nameof(AchievementMenuID), true);
     public static ConditionalWeakTable<RainWorld, List<Achievement>> achievementCWT = new();
@@ -52,19 +52,6 @@ public class Plugin : BaseUnityPlugin
         // These hooks are for updating and drawing the achievements.
         On.MainLoopProcess.GrafUpdate += MainLoopProcess_GrafUpdate;
         On.MainLoopProcess.Update += MainLoopProcess_Update;
-        // On.RainWorld.Update += (orig, self) => {
-        //     orig(self);
-        //     cooldown--;
-        //     if (Input.GetKey(KeyCode.Y) && cooldown <= 0) {
-        //         Achievement.TriggerAchievement<DefaultPopup>(self, "moon.1");
-        //         cooldown = 40;
-        //     }
-        //     if (Input.GetKey(KeyCode.U) && cooldown <= 0) {
-        //         Achievement.TriggerAchievement<DefaultPopup>(self, "moon.2");
-        //         cooldown = 40;
-        //     }
-        //     achievementContainer.MoveToFront();
-        // };
     }
     private void MainLoopProcess_Update(On.MainLoopProcess.orig_Update orig, MainLoopProcess self)
     {
@@ -83,8 +70,16 @@ public class Plugin : BaseUnityPlugin
     private static void RainWorld_PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self) {
         orig(self);
         if (!postInit && achievementCWT.TryGetValue(self, out List<Achievement> achievementList)) {
-            Futile.stage.AddChild(achievementContainer);
-            self.Shaders["AchievementPopup"] = FShader.CreateShader("AchievementShader", AssetBundle.LoadFromFile(AssetManager.ResolveFilePath("achievementshaders")).LoadAsset<Shader>("Assets/AchievementShader.shader"));
+            // This might be needed to ensure that Steam is active.
+            int k = 0;
+            while (!SteamUserStats.RequestCurrentStats() && k <= 300) { k++; }
+            if (k > 300) {
+                Debug.Log("RWAchievements: Steam may not be loaded. This could result in the menu not loading, or the achievements being empty or white.");
+            }
+            
+            Futile.stage.AddChild(achievementPopupContainer);
+            var assetBundle = AssetBundle.LoadFromFile(AssetManager.ResolveFilePath("achievementshaders"));
+            self.Shaders["AchievementPopup"] = FShader.CreateShader("AchievementShader", assetBundle.LoadAsset<Shader>("Assets/AchievementShader.shader"));
             unlockDataPath = ModManager.ActiveMods.First(x => x.id == MOD_ID).path + Path.DirectorySeparatorChar + "UnlockData.txt";
 
             #region LoadSteamAchievements
@@ -305,13 +300,13 @@ public class Achievement
         //     }
         //     ret += s;
         // }
-        // return ret;
     }
     internal static Dictionary<string, string[]> saveData = new Dictionary<string, string[]>();
     public string achievementName = "";
     public string dateAchieved = "";
     public string imageFolder = "";
     public string imageName = "";
+    public string[]? images = null;
     public string description = "";
     public string originMod = "";
     public bool unlocked = false;

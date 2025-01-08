@@ -43,8 +43,11 @@ internal class AchievementMenu : Menu.Menu
         dropdownStepsTaken = 0;
         dropdownMovementPerStep = ScreenHeight/DROPDOWN_MENU_STEPS;
 
+        // This creates the main container that holds all of the control UI buttons. Refered to as a "Page" by the vanilla game code.
         #region Main Page
         pages.Add(new Page(this, null, "main", 0){pos=new Vector2(1366, 768) - manager.rainWorld.options.ScreenSize});
+        // This is a wrapper for Remix Op elements provided by Downpour, so that they can be used by other parts of the game.
+        // This is used for the scrolling list view later.
         tabWrapper = new MenuTabWrapper(this, pages[0]);
         pages[0].subObjects.Add(tabWrapper);
 
@@ -99,6 +102,8 @@ internal class AchievementMenu : Menu.Menu
             new UIelementWrapper(tabWrapper, achievementScroll);
 
             tabWrapper.myContainer.MoveToFront();
+
+            // This shade sprite is the darkness that appears behind the list view to blur the achivement behind it out.
             FSprite shade = new FSprite("Futile_White")
             {
                 scaleX = 86,
@@ -108,22 +113,27 @@ internal class AchievementMenu : Menu.Menu
             shade.SetPosition(new Vector2(342,340));
             achievementScroll.myContainer.AddChild(shade);
             shade.MoveToBack();
+
             foreach (FSprite sprite in listView.roundedRect.sprites) {
                 sprite.MoveToFront();
             }
             listView.symbolSprite.MoveToFront();
 
+            // Adds buttons to the scroll view list, one for each achivement. They cause a jump to the an achievement.
             int rowNum = 1;
             for (int i = 0; i < achievementList1.Count; i++) {
                 if (i%3==0 && i!=0) {
                     rowNum++;
                 }
                 string name = achievementList1[i].achievementName;
+                // Trim names that are too long
                 if (name.Length > 29) {
                     name = name.Substring(0, 29).Trim() + "...";
                 }
                 AchievementOPSimpleButton simpleButton = new AchievementOPSimpleButton(new Vector2(240*(i%3)+5, (buttonHeight+20)*scrollMenuRows-70*rowNum), new Vector2(600f/3f, buttonHeight), name, achievementList1[i].internalID);
 
+                // Unfortunatly, the Event must be subscribed to using reflection via a delegate. But all it does is
+                // makes the newly created button call the main menu's Signal method when it is clicked via the OnClick event.
                 var onClick = typeof(AchievementOPSimpleButton).GetEvent("OnClick");
                 onClick.AddEventHandler(simpleButton, Delegate.CreateDelegate(onClick.EventHandlerType, this, typeof(AchievementMenu).GetMethod("Signal")));
 
@@ -132,11 +142,16 @@ internal class AchievementMenu : Menu.Menu
         }
         #endregion
         JumpToAchievement(0);
-        Debug.Log($"Achievement Mod menu startup, current selected page: {currentSelectedPage}, {achievementList.Count}");
+        Debug.Log($"Achievement Mod menu startup, current selected page: {currentSelectedPage}, out of {achievementList.Count}");
 
         // pages[1].subObjects.Add(new AchievementPage(this, pages[1], "ach1", 2, new Vector2(screenWidth/2f + 2*screenWidth, screenHeight/2f) - adjustForPageOffsetDueToResolution, "", "aidesktopimg", "ACHIEVEMENT NAME", "2/27/2024", "ACHIEVEMENT\nDESCRIPTION"));
         
         // pages[1].subObjects.Add(new AchievementPage(this, pages[1], "ach2", 3, new Vector2((screenWidth/2f) + 3*screenWidth, screenHeight/2f) - adjustForPageOffsetDueToResolution, "", "full_figure_red", "ACHIEVEMENT NAME 2", "2/27/2024", "ACHIEVEMENT DESCRIPTION\n2"));
+    }
+    public override void GrafUpdate(float timeStacker)
+    {
+        base.GrafUpdate(timeStacker);
+        pages[0].mouseCursor.BumToFront();
     }
     public override void Update()
     {
@@ -162,6 +177,7 @@ internal class AchievementMenu : Menu.Menu
             Singal(pages[0], "LIST");
             backCooldown = 60;
         }
+        // This moves all pages to the right
         if (pageStepsTaken < PAGE_STEPS) {
             foreach (AchievementPage page in pages[1].subObjects) {
                 if (Mathf.Round(page.pos.x) >= GreatestXPos) {
@@ -173,6 +189,7 @@ internal class AchievementMenu : Menu.Menu
             }
             pageStepsTaken++;
         }
+        // This moves all pages to the left
         if (pageStepsTaken > PAGE_STEPS) {
             foreach (AchievementPage page in pages[1].subObjects) {
                 if (Mathf.Round(page.pos.x) <= SmallestXPos) {
@@ -195,6 +212,7 @@ internal class AchievementMenu : Menu.Menu
                 // Debug.Log($"Achievement Mod alignment test: {page.pos.x%20}");
             }
         }
+        // These are for the dropdown menu, or List view, for sending it up and down when triggered.
         if (dropdownStepsTaken > 0) {
             achievementScroll.PosY -= dropdownMovementPerStep;
             dropdownStepsTaken--;
@@ -207,6 +225,7 @@ internal class AchievementMenu : Menu.Menu
             backCooldown--;
         }
     }
+    // This is used by the buttons in the scrolling list view
     public void Signal(UIelement sennder) {
         Debug.Log((sennder as AchievementOPSimpleButton)?._text);
         Debug.Log((sennder as AchievementOPSimpleButton)?.ID);
@@ -250,7 +269,7 @@ internal class AchievementMenu : Menu.Menu
             manager.menuMic.PlayLoop(SoundID.MENU_Main_Menu_LOOP, 0, 1, 1, true);
         }
         if (message == "NEXT" && pageStepsTaken == PAGE_STEPS) {
-            PlaySound(SoundID.MENU_Next_Slugcat, 0.4f, 0.75f, 0.9f);
+            PlaySound(SoundID.MENU_Next_Slugcat, 0.4f, 0.8f, 0.9f);
             currentSelectedPage++;
             pageStepsTaken = 2*PAGE_STEPS;
             nextButton.buttonBehav.greyedOut = true;
@@ -261,7 +280,7 @@ internal class AchievementMenu : Menu.Menu
             Debug.Log($"Achievement Mod next page, current selected page: {currentSelectedPage}");
         }
         if (message == "PREV" && pageStepsTaken == PAGE_STEPS) {
-            PlaySound(SoundID.MENU_Next_Slugcat, -0.4f, 0.75f, 0.9f);
+            PlaySound(SoundID.MENU_Next_Slugcat, -0.4f, 0.8f, 0.9f);
             currentSelectedPage--;
             pageStepsTaken = 0;
             nextButton.buttonBehav.greyedOut = true;
@@ -291,7 +310,7 @@ internal class AchievementMenu : Menu.Menu
         }
     }
 }
-public class AchievementOPSimpleButton : OpSimpleButton
+internal class AchievementOPSimpleButton : OpSimpleButton
 {
     public string ID;
     public AchievementOPSimpleButton(Vector2 pos, Vector2 size, string displayText, string ID) : base(pos, size, displayText)
@@ -299,7 +318,7 @@ public class AchievementOPSimpleButton : OpSimpleButton
         this.ID = ID;
     }
 }
-public class ListViewButton : ButtonTemplate
+internal class ListViewButton : ButtonTemplate
 {
     public RoundedRect roundedRect;
     public string signalText;
@@ -323,10 +342,8 @@ public class ListViewButton : ButtonTemplate
     public override void GrafUpdate(float timeStacker)
     {
         base.GrafUpdate(timeStacker);
-        float num = 0.5f - 0.5f * Mathf.Sin(Mathf.Lerp(buttonBehav.lastSin, buttonBehav.sin, timeStacker) / 30f * Mathf.PI * 2f);
-        num *= buttonBehav.sizeBump;
         symbolSprite.scale = 2.75f;
-        symbolSprite.color = (buttonBehav.greyedOut ? Menu.Menu.MenuRGB(Menu.Menu.MenuColors.VeryDarkGrey) : Color.Lerp(base.MyColor(timeStacker), Menu.Menu.MenuRGB(Menu.Menu.MenuColors.VeryDarkGrey), num));
+        symbolSprite.color = (buttonBehav.greyedOut ? Menu.Menu.MenuRGB(Menu.Menu.MenuColors.VeryDarkGrey) : base.MyColor(timeStacker));
         symbolSprite.x = DrawX(timeStacker) + DrawSize(timeStacker).x / 2f;
         symbolSprite.y = DrawY(timeStacker) + DrawSize(timeStacker).y / 2f;
         Color color = Color.Lerp(Menu.Menu.MenuRGB(Menu.Menu.MenuColors.Black), Menu.Menu.MenuRGB(Menu.Menu.MenuColors.White), Mathf.Lerp(buttonBehav.lastFlash, buttonBehav.flash, timeStacker));

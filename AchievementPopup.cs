@@ -12,15 +12,31 @@ namespace RWAchievements;
 public abstract class Popup
 {
     private readonly Achievement _achievement;
+    /// <summary>
+    /// To be used with the lastPos field for linear interpolation in the GrafUpdate method.
+    /// </summary>
     public Vector2 pos;
+    /// <summary>
+    /// To be used with the pos field for linear interpolation in the GrafUpdate method.
+    /// </summary>
     public Vector2 lastPos;
     public Popup(Achievement achievement) {
         _achievement = achievement;
     }
+    /// <summary>
+    /// This is called as much as possible, but is only called once a frame.
+    /// This should be used for smooth graphics, so that the graphical updates are not tied to the framerate.
+    /// </summary>
     public virtual void GrafUpdate(float timeStacker) {
     }
+    /// <summary>
+    /// This is called 40 times a second under normal circumstances (no lag). Normal update logic goes here.
+    /// </summary>
     public virtual void Update() {
     }
+    /// <summary>
+    /// This returns the achievement associated with thise Popup
+    /// </summary>
     public Achievement GetAchievement() {
         return _achievement;
     }

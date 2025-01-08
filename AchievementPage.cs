@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using RWCustom;
+using MenuShader = Menu.MenuDepthIllustration.MenuShader;
 using Menu;
 using UnityEngine;
 
@@ -20,6 +23,8 @@ public class AchievementPage : Page
     public AchievementPage(Menu.Menu menu, Page owner, string name, int index, Vector2 pos, Achievement achievement) : base(menu, owner, name, index) {
         this.owner = owner;
         // Clear it of the mouse position object, I won't be needing it
+        mouseCursor.RemoveSprites();
+        mouseCursor = null;
         subObjects.Clear();
         // Set the default position
         this.pos = pos;
