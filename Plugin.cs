@@ -560,6 +560,11 @@ public class Achievement
     {
         string save = "";
         foreach (KeyValuePair<string, string[]> keyValuePair in saveData) {
+            // This stores the save data in the following format:
+            // ID~ifitisunlocked`dateitwasachieved|
+            // ID: Simply the id of the achievement
+            // ifitisunlocked: This will be either "true" or "false" w/o the quotation
+            // dateitwasachieved: The date it was achieved, in the format "day/month/year"
             save += keyValuePair.Key + Plugin.DICTIONARY_SEPARATOR + keyValuePair.Value[0] + Plugin.UNLOCK_AND_DATE_SEPARATOR + keyValuePair.Value[1] + Plugin.SAVE_DATA_SEPARATOR;
         }
         File.WriteAllText(Plugin.unlockDataPath, save);
