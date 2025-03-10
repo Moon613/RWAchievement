@@ -331,6 +331,7 @@ internal class Plugin : BaseUnityPlugin
             #region LoadSteamAchievements
             Debug.Log($"Achievement Mod, there are {SteamUserStats.GetNumAchievements()} Steam achievements");
             for (uint i = 0; i < SteamUserStats.GetNumAchievements(); i++) {
+                Debug.Log($"Obtaining data for Steam Achievement {i}");
                 string achiInternalName = SteamUserStats.GetAchievementName(i);
 
                 // Get and conver time
@@ -355,11 +356,11 @@ internal class Plugin : BaseUnityPlugin
                     imageFolder = "achievementImages";
                     imageName = achiName;
                 }
-                // If depth images are found, it uses those instead. It finds them by looking in the directory for public the name of the achievement with _1 appended to it
-                if (File.Exists(AssetManager.ResolveFilePath("achievementImages" + Path.DirectorySeparatorChar + "depthIllustrations" + Path.DirectorySeparatorChar + achiName + "_1.png"))) {
-                    imageFolder = "achievementImages" + Path.DirectorySeparatorChar + "depthIllustrations";
+                // If depth images are found, it uses those as well. It finds them by looking in the directory for public the name of the achievement with _1 appended to it
+                if (File.Exists(AssetManager.ResolveFilePath("achievementImages" + Path.DirectorySeparatorChar + achiName + "_1.png"))) {
+                    imageFolder = "achievementImages";
                     imageName = achiName;
-                    string[] arr = AssetManager.ListDirectory(imageFolder, false, true).Where(file => file.Contains(achiName.ToLower())).ToArray();
+                    string[] arr = AssetManager.ListDirectory(imageFolder, false, true).Where(file => file.Contains(achiName.ToLower()+"_")).ToArray();
                     images = new string[arr.Length];
                     for (int j = 0; j < arr.Length; j++) {
                         images[j] = imageName + "_" + (j+1);
@@ -367,10 +368,14 @@ internal class Plugin : BaseUnityPlugin
                 }
                 // If the achievement is unlocked, use all the loaded data, otherwise obfuscate it
                 if (unlocked) {
-                    achievementList.Add(new Achievement(achiName, time, imageFolder, imageName, achiDesc, "Steam", achiInternalName, images, IDToInfo[achiName].Item1, IDToInfo[achiName].Item2, IDToInfo[achiName].Item3){unlocked=true});
+                    var achievement = new Achievement(achiName, time, imageFolder, imageName, achiDesc, "Steam", achiInternalName, images, IDToInfo[achiName].Item1, IDToInfo[achiName].Item2, IDToInfo[achiName].Item3){unlocked=true};
+                    Debug.Log($"Achievement Mod, add unlocked Steam Achievement {achievement}");
+                    achievementList.Add(achievement);
                 }
                 else {
-                    achievementList.Add(new Achievement("???", "?", "", "multiplayerportrait02", "???", "Steam", achiInternalName, null, null, null, null){unlocked=false});
+                    var achievement = new Achievement("???", "?", "", "multiplayerportrait02", "???", "Steam", achiInternalName, null, null, null, null){unlocked=false};
+                    Debug.Log($"Achievement Mod, add locked Steam Achievement {achievement} (is {achiName})");
+                    achievementList.Add(achievement);
                 }
             }
             #endregion
@@ -439,6 +444,9 @@ internal class Plugin : BaseUnityPlugin
                         Debug.Log($"Achievements Mod error loading achievements from file!\n{files[i]}\n{err}");
                     }
                 }
+                else {
+                    Debug.Log($"Somehow, the file does not exist? Gl. {files[i]}");
+                }
             }
             Achievement.SaveUnlockData();
             #endregion
@@ -449,6 +457,7 @@ internal class Plugin : BaseUnityPlugin
     {
         orig(self);
         achievementCWT.Add(self, new List<Achievement>());
+        Debug.Log("Achievement Mod, added CWT to RainWorld");
     }
 }
 public class Achievement

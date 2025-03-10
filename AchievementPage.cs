@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using RWCustom;
-using MenuShader = Menu.MenuDepthIllustration.MenuShader;
 using Menu;
 using UnityEngine;
 

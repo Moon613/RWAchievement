@@ -4,6 +4,7 @@ using System.Linq;
 using Menu;
 using Menu.Remix;
 using Menu.Remix.MixedUI;
+using RWCustom;
 using UnityEngine;
 using static RWAchievements.Plugin;
 
@@ -36,6 +37,7 @@ internal class AchievementMenu : Menu.Menu
     public OpScrollBox achievementScroll;
     public new SimpleButton backObject;
     public AchievementMenu(ProcessManager processManager) : base(processManager, Plugin.AchievementMenuID) {
+        Debug.Log($"Aspect ratio is {Custom.rainWorld.options.ScreenSize}. If it is not 16:9 there may be problems with fading");
         currentPage = 0;
 
         pageStepsTaken = PAGE_STEPS;
@@ -86,7 +88,7 @@ internal class AchievementMenu : Menu.Menu
         if (achievementCWT.TryGetValue(manager.rainWorld, out List<Achievement> achievementList)) {
             for (int i = 0; i < achievementList.Count; i++) {
                 Achievement achievement = achievementList[i];
-                // Debug.Log($"Achievement Mod: {achievement.achievementName}, {achievement.imageFolder}, {achievement.imageName}, {achievement.description}");
+                Debug.Log($"Created an achievement page for: {achievement}");
                 pages[1].subObjects.Add(new AchievementPage(this, pages[1], achievement.achievementName, i, new Vector2(ScreenWidth/2f + (i-2) * ScreenWidth, ScreenHeight/2f) - adjustForPageOffsetDueToResolution, achievement));
             }
         }
