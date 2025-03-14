@@ -77,7 +77,7 @@ internal class MenuHooks {
         Vector2 pos = new Vector2(683f - buttonWidth / 2f, 0f);
         Vector2 size = new Vector2(buttonWidth, 30f);
         
-        self.AddMainMenuButton(new SimpleButton(self, self.pages[0], "Achievements".ToUpper(), "AAAAAAAA", pos, size), () => {
+        self.AddMainMenuButton(new SimpleButton(self, self.pages[0], self.Translate("Achievements".ToUpper()), "AAAAAAAA", pos, size), () => {
             manager.RequestMainProcessSwitch(Plugin.AchievementMenuID);
             manager.musicPlayer.FadeOutAllSongs(180);
             manager.menuMic.AllQuiet();

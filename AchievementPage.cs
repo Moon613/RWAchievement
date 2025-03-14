@@ -31,18 +31,18 @@ public class AchievementPage : Page
         this.pos = pos;
         
         // Add the Achievement name
-        title = new MenuLabel(menu, this, achievement.unlocked? achievement.achievementName : "Hidden Achievement", new Vector2(0, 0.85f*ScreenCenter.y), Vector2.zero, true);
+        title = new MenuLabel(menu, this, achievement.unlocked? menu.Translate(achievement.achievementName) : menu.Translate("Hidden Achievement"), new Vector2(0, 0.85f*ScreenCenter.y), Vector2.zero, true);
         title.label.scale = 2.5f;
         subObjects.Add(title);
         
         // Add the date it was achieved
-        date = new MenuLabel(menu, this, "Date Achieved:\n" + (achievement.unlocked? achievement.dateAchieved : "?"), new Vector2(0, 0.695f*ScreenCenter.y), Vector2.zero, true);
+        date = new MenuLabel(menu, this, menu.Translate("Date Achieved") + ":\n" + (achievement.unlocked? achievement.dateAchieved : "?"), new Vector2(0, 0.695f*ScreenCenter.y), Vector2.zero, true);
         date.label.scale = 0.65f;
         subObjects.Add(date);
         
         // Add text that identifies which mod it came from, if specified
         if (achievement.originMod != null) {
-            origin = new MenuLabel(menu, this, "From: " + achievement.originMod, new Vector2(0, 0.61f*ScreenCenter.y), Vector2.zero, true);
+            origin = new MenuLabel(menu, this, menu.Translate("From") + ": " + achievement.originMod, new Vector2(0, 0.61f*ScreenCenter.y), Vector2.zero, true);
             origin.label.scale = 0.575f;
             subObjects.Add(origin);
         }
@@ -92,7 +92,7 @@ public class AchievementPage : Page
         }
         
         // Add the description
-        description = new MenuLabel(menu, this, achievement.unlocked? achievement.description : "???", new Vector2(0, -0.5f*ScreenCenter.y), Vector2.zero, true);
+        description = new MenuLabel(menu, this, achievement.unlocked? menu.Translate(achievement.description) : "???", new Vector2(0, -0.5f*ScreenCenter.y), Vector2.zero, true);
         description.label.scale = 1.01f;
         subObjects.Add(description);
     }

@@ -1,9 +1,9 @@
 {
 	"id": "moon.achievements",
 	"name": "RWAchievements",
-	"version": "1.0",
+	"version": "1.0.1",
 	"hide_version": false,
-	"authors": "Code: Moon\n\nArtists:\n-stormthecat\n-SAPantry",
+	"authors": "Code: Moon\n\nArtists:\n-stormthecat\n-SAPantry\n\nTranslations:\n-Slithers (Spanish)",
 	"description": "A feature addition mod that lets you view your Steam achievements.\nNow with modding support!\n\nLink to documentation: https://moon613.github.io/RWAchievement/index.html",
 	"requirements": [],
 	"requirements_names": [],

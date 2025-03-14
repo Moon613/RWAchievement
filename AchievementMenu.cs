@@ -127,7 +127,7 @@ internal class AchievementMenu : Menu.Menu
                 if (i%3==0 && i!=0) {
                     rowNum++;
                 }
-                string name = achievementList1[i].achievementName;
+                string name = Translate(achievementList1[i].achievementName);
                 // Trim names that are too long
                 if (name.Length > 29) {
                     name = name.Substring(0, 29).Trim() + "...";

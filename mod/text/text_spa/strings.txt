@@ -1,0 +1,4 @@
+ACHIEVEMENTS|LOGROS
+Date Achieved|Conseguido
+From|De
+Hidden Achievement|Logro Oculto
