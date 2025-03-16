@@ -2,3 +2,5 @@ ACHIEVEMENTS|LOGROS
 Date Achieved|Conseguido
 From|De
 Hidden Achievement|Logro Oculto
+You completed every expedition laid before you|Has completado todas las expediciones en tu camino
+You completed every challenge laid before you|Has completado todos los desafíos en tu camino
